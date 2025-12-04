@@ -35,8 +35,8 @@ const supervisorSchema = new Schema(
 
     role: {
       type: String,
-      enum: ["admin", "supervisor", "viewer"],
-      default: "supervisor",
+      enum: ["admin"],
+      default: "admin",
     },
 
     refreshToken: {

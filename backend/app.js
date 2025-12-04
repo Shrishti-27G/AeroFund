@@ -3,7 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import fileUpload from "express-fileupload";
 
-import supervisoruthRoutes from "./routes/supervisorAuthRoutes.js";
+import adminAuthRoutes from "./routes/adminAuthRoutes.js";
 
 const app = express();
 
@@ -11,10 +11,11 @@ const app = express();
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "*", 
-    credentials: true,
+    origin: "http://localhost:3000", // frontend URL
+    credentials: true,               // allow cookies
   })
 );
+
 
 
 app.use(cookieParser());
@@ -30,7 +31,7 @@ app.use(
   fileUpload({
     useTempFiles: true,
     tempFileDir: "/tmp/",
-    limits: { fileSize: 10 * 1024 * 1024 }, 
+    limits: { fileSize: 10 * 1024 * 1024 },
   })
 );
 
@@ -39,6 +40,6 @@ app.use(
 app.use("/uploads", express.static("uploads"));
 
 
-app.use("/superviser-auth", supervisoruthRoutes);
+app.use("/admin-auth", adminAuthRoutes);
 
 export default app;
