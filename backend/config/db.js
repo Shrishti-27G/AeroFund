@@ -2,9 +2,10 @@ import mongoose from "mongoose";
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI, {
-      dbName: "AeroFundDB",
-    });
+    console.log("Connecting to mongoDB");
+
+    await mongoose.connect(process.env.MONGO_URI);
+
     console.log("MongoDB Connected");
   } catch (error) {
     console.error("DB Connection Error:", error.message);
@@ -13,3 +14,4 @@ const connectDB = async () => {
 };
 
 export default connectDB;
+
