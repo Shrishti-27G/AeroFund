@@ -26,17 +26,7 @@ export const router = createBrowserRouter([
         path: "home",
         element: <Home />,
       },
-      {
-        path: "dashboard",
-        element: (
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        ),
-        children: [
-        ],
-      },
-
+     
       {
         path: "stations",
         element: (

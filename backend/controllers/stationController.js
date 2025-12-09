@@ -309,10 +309,11 @@ export const getStationByFinancialYear = async (req, res) => {
 export const updateYearlyBudget = async (req, res) => {
   try {
     const { stationCode, year } = req.params;
-    const { totalAllocated, totalUtilized, totalEstimated, remark } = req.body;
+    const { totalAllocated, totalUtilized, totalEstimated, remark, description, allocationType } = req.body;
 
     console.log("Edit req body -> ", req.body);
     console.log("Edit req files -> ", req.files);
+
 
     // ✅ BASIC VALIDATION
     if (!stationCode || !year) {
@@ -364,6 +365,8 @@ export const updateYearlyBudget = async (req, res) => {
         totalUtilized: totalUtilized ?? 0,
         totalEstimated: totalEstimated ?? 0,
         remark: remark ?? "N/A",
+        description: description ?? "N/A",
+        allocationType: allocationType,
 
         // ✅ INIT RECEIPTS ARRAY
         receipts: receiptUrl ? [receiptUrl] : [],
@@ -388,6 +391,15 @@ export const updateYearlyBudget = async (req, res) => {
 
     if (totalEstimated !== undefined)
       yearlyRecord.totalEstimated = totalEstimated;
+
+    if (description !== undefined) {
+      yearlyRecord.description = description;
+    }
+
+    if (allocationType !== undefined) {
+      yearlyRecord.allocationType = allocationType;
+    }
+
 
     if (remark !== undefined)
       yearlyRecord.remark = remark;
@@ -458,6 +470,28 @@ export const getAllStations = async (req, res) => {
         createdAt: 1,
         updatedAt: 1,
 
+
+        description: {
+          $cond: [
+            { $gt: [{ $size: "$yearlyDataFiltered" }, 0] },
+            {
+              $ifNull: [
+                { $arrayElemAt: ["$yearlyDataFiltered.description", 0] },
+                ""
+              ]
+            },
+            ""
+          ]
+        },
+
+        allocationType: {
+          $cond: [
+            { $gt: [{ $size: "$yearlyDataFiltered" }, 0] },
+            { $arrayElemAt: ["$yearlyDataFiltered.allocationType", 0] },
+            "N/A",
+          ],
+        },
+
         financialYear: {
           $cond: [
             { $ifNull: [filterYear, false] },
@@ -498,13 +532,6 @@ export const getAllStations = async (req, res) => {
           ],
         },
 
-        // receipt: {
-        //   $cond: [
-        //     { $gt: [{ $size: "$yearlyDataFiltered" }, 0] },
-        //     { $arrayElemAt: ["$yearlyDataFiltered.receipt", 0] },
-        //     "Not Uploaded",
-        //   ],
-        // },
 
         receipts: {
           $cond: [
