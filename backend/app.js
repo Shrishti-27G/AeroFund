@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import fileUpload from "express-fileupload";
 
 import adminAuthRoutes from "./routes/adminAuthRoutes.js";
+import stationRoutes from "./routes/stationRoutes.js"
 
 const app = express();
 
@@ -41,5 +42,7 @@ app.use("/uploads", express.static("uploads"));
 
 
 app.use("/admin-auth", adminAuthRoutes);
+app.use("/stations", stationRoutes)
 
 export default app;
+  

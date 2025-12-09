@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Player } from "@lottiefiles/react-lottie-player";
 import planeAnimation from "../assets/animations/airplane.json";
+import { useSelector } from "react-redux";
+
 
 const bubbles = [
   { size: 250, x: "5%", y: "60%", duration: 15 },
@@ -11,7 +13,11 @@ const bubbles = [
   { size: 270, x: "25%", y: "25%", duration: 20 },
 ];
 
+
+
+
 const Landing = () => {
+  const { user } = useSelector((state) => state.auth);
   return (
     <section className="relative w-full h-screen bg-[#020B16] overflow-hidden flex justify-center items-center">
 
@@ -68,7 +74,7 @@ const Landing = () => {
           transition={{ delay: 1, duration: 0.7 }}
           className="text-blue-200 text-xl max-w-xl mx-auto mt-5"
         >
-          Transforming Airport Finances for Takeoff 
+          Transforming Airport Finances for Takeoff
         </motion.p>
 
         <motion.div
@@ -77,14 +83,15 @@ const Landing = () => {
           transition={{ delay: 1.5, duration: 0.6 }}
         >
           <Link
-            to="/home"
+            to={user ? "/stations" : "/home"} // ✅ USER LOGGED IN → STATIONS
             className="inline-block mt-10 px-14 py-4 rounded-full font-semibold
-            bg-gradient-to-r from-[#007AFF] to-[#00CFFF] text-white text-lg
-            hover:scale-[1.10] hover:shadow-[0_0_50px_#00CFFF90] 
-            transition-all duration-500"
+  bg-gradient-to-r from-[#007AFF] to-[#00CFFF] text-white text-lg
+  hover:scale-[1.10] hover:shadow-[0_0_50px_#00CFFF90] 
+  transition-all duration-500"
           >
             Get Started
           </Link>
+
         </motion.div>
       </div>
 

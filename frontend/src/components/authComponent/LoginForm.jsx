@@ -1,15 +1,19 @@
 import { useState } from "react";
 import { loginAdmin } from "../../services/operations/adminAuthOperations";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 
 const LoginForm = ({ switchToRegister, closeModal }) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
 
     const submitHandler = async (e) => {
         e.preventDefault();
 
-        const user = await loginAdmin(email, password);
+        const user = await dispatch(loginAdmin(email, password, navigate));
 
         if (user) {
             console.log("Logged in user:", user);

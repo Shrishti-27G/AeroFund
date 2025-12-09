@@ -91,31 +91,67 @@ export const loginAdmin = async (req, res) => {
 
 
 
+// export const logoutAdmin = async (req, res) => {
+//     try {
+//         const supervisorId = req.user?._id;
+
+//         if (!supervisorId) {
+//             return res.status(400).json({ message: "Invalid request" });
+//         }
+
+
+//         await Supervisor.findByIdAndUpdate(
+//             supervisorId,
+//             {
+//                 $set: { accessToken: null, refreshToken: null },
+//             },
+//             { new: true }
+//         );
+
+
+//         res
+//             .clearCookie("accessToken", cookieOptions)
+//             .clearCookie("refreshToken", cookieOptions)
+//             .status(200)
+//             .json({ message: "Logged out successfully" });
+//     } catch (error) {
+//         res.status(500).json({ message: "Server error" });
+//     }
+// };
+
+
 export const logoutAdmin = async (req, res) => {
     try {
-        const supervisorId = req.user?._id;
+        const supervisorId = req.admin?._id; // ✅ FIXED
+
+        console.log("logout -> ", req.a);
+
 
         if (!supervisorId) {
             return res.status(400).json({ message: "Invalid request" });
         }
 
-
         await Supervisor.findByIdAndUpdate(
             supervisorId,
-            {
-                $set: { accessToken: null, refreshToken: null },
-            },
+            { $set: { accessToken: null, refreshToken: null } },
             { new: true }
         );
 
-
         res
-            .clearCookie("accessToken", cookieOptions)
-            .clearCookie("refreshToken", cookieOptions)
+            .clearCookie("accessToken", {
+                httpOnly: true,
+                sameSite: "strict",
+                secure: process.env.NODE_ENV === "production",
+            })
+            .clearCookie("refreshToken", {
+                httpOnly: true,
+                sameSite: "strict",
+                secure: process.env.NODE_ENV === "production",
+            })
             .status(200)
-            .json({ message: "Logged out successfully" });
+            .json({ success: true, message: "Logged out successfully" });
+
     } catch (error) {
         res.status(500).json({ message: "Server error" });
     }
 };
-
