@@ -1,12 +1,27 @@
 import { Supervisor } from "../models/supervisorModel.js";
+import jwt from "jsonwebtoken";
 
 
-const cookieOptions = {
+// const cookieOptions = {
+//     httpOnly: true,
+//     secure: false,
+//     sameSite: "lax",
+//     maxAge: 24 * 60 * 60 * 1000, // 1 day
+// };
+
+
+const accessCookieOptions = {
     httpOnly: true,
     secure: false,
     sameSite: "lax",
-    maxAge: 24 * 60 * 60 * 1000, // 1 day
 };
+
+const refreshCookieOptions = {
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
+};
+
 
 
 
@@ -44,80 +59,108 @@ export const signupAdmin = async (req, res) => {
 };
 
 
-export const loginAdmin = async (req, res) => {
-    try {
-        const { email, password } = req.body;
-
-        if (!email || !password)
-            return res.status(400).json({ message: "Email & password required" });
-
-
-        const supervisor = await Supervisor.findOne({ email });
-        if (!supervisor)
-            return res.status(404).json({ message: "Supervisor not found" });
-
-
-        const isValid = await supervisor.isPasswordCorrect(password);
-        if (!isValid)
-            return res.status(401).json({ message: "Invalid credentials" });
-
-
-        const accessToken = supervisor.generateAccessToken();
-        const refreshToken = supervisor.generateRefreshToken();
-
-        supervisor.accessToken = accessToken;
-        supervisor.refreshToken = refreshToken;
-        await supervisor.save();
-
-
-        res
-            .cookie("accessToken", accessToken, cookieOptions)
-            .cookie("refreshToken", refreshToken, cookieOptions)
-            .status(200)
-            .json({
-                message: "Login successful",
-                supervisor: {
-                    _id: supervisor._id,
-                    name: supervisor.name,
-                    email: supervisor.email,
-                    role: supervisor.role,
-                },
-            });
-    } catch (error) {
-        console.error("Login Error:", error);
-        res.status(500).json({ message: "Server error" });
-    }
-};
-
-
-
-// export const logoutAdmin = async (req, res) => {
+// export const loginAdmin = async (req, res) => {
 //     try {
-//         const supervisorId = req.user?._id;
+//         const { email, password } = req.body;
 
-//         if (!supervisorId) {
-//             return res.status(400).json({ message: "Invalid request" });
-//         }
+//         if (!email || !password)
+//             return res.status(400).json({ message: "Email & password required" });
 
 
-//         await Supervisor.findByIdAndUpdate(
-//             supervisorId,
-//             {
-//                 $set: { accessToken: null, refreshToken: null },
-//             },
-//             { new: true }
-//         );
+//         const supervisor = await Supervisor.findOne({ email });
+//         if (!supervisor)
+//             return res.status(404).json({ message: "Supervisor not found" });
+
+
+//         const isValid = await supervisor.isPasswordCorrect(password);
+//         if (!isValid)
+//             return res.status(401).json({ message: "Invalid credentials" });
+
+
+//         const accessToken = supervisor.generateAccessToken();
+//         const refreshToken = supervisor.generateRefreshToken();
+
+//         supervisor.accessToken = accessToken;
+//         supervisor.refreshToken = refreshToken;
+//         await supervisor.save();
 
 
 //         res
-//             .clearCookie("accessToken", cookieOptions)
-//             .clearCookie("refreshToken", cookieOptions)
+//             .cookie("accessToken", accessToken, cookieOptions)
+//             .cookie("refreshToken", refreshToken, cookieOptions)
 //             .status(200)
-//             .json({ message: "Logged out successfully" });
+//             .json({
+//                 message: "Login successful",
+//                 supervisor: {
+//                     _id: supervisor._id,
+//                     name: supervisor.name,
+//                     email: supervisor.email,
+//                     role: supervisor.role,
+//                 },
+//             });
 //     } catch (error) {
+//         console.error("Login Error:", error);
 //         res.status(500).json({ message: "Server error" });
 //     }
 // };
+
+
+export const loginAdmin = async (req, res) => {
+    try {
+      const { email, password } = req.body;
+  
+      if (!email || !password)
+        return res.status(400).json({ message: "Email & password required" });
+  
+      const supervisor = await Supervisor.findOne({ email });
+      if (!supervisor)
+        return res.status(404).json({ message: "Supervisor not found" });
+  
+      const isValid = await supervisor.isPasswordCorrect(password);
+      if (!isValid)
+        return res.status(401).json({ message: "Invalid credentials" });
+  
+      // ✅ TOKENS
+      const accessToken = supervisor.generateAccessToken();   // 10s
+      const refreshToken = supervisor.generateRefreshToken(); // 2d
+  
+      // ✅ SAVE IN DB
+      supervisor.accessToken = accessToken;
+      supervisor.refreshToken = refreshToken;
+      await supervisor.save();
+  
+      // ✅ ACCESS TOKEN COOKIE (SHORT LIFE)
+      res.cookie("accessToken", accessToken, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: false,
+        maxAge: 10 * 1000, // ✅ 10 seconds
+      });
+  
+      // ✅ REFRESH TOKEN COOKIE (LONG LIFE)
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: false,
+        maxAge: 2 * 24 * 60 * 60 * 1000, // ✅ 2 days
+      });
+  
+      res.status(200).json({
+        message: "Login successful",
+        supervisor: {
+          _id: supervisor._id,
+          name: supervisor.name,
+          email: supervisor.email,
+          role: supervisor.role,
+        },
+      });
+    } catch (error) {
+      console.error("Login Error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  };
+  
+
 
 
 export const logoutAdmin = async (req, res) => {
@@ -154,4 +197,56 @@ export const logoutAdmin = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: "Server error" });
     }
+};
+
+
+
+export const refreshAccessToken = async (req, res) => {
+  try {
+    const refreshToken = req.cookies?.refreshToken;
+
+    if (!refreshToken) {
+      return res.status(401).json({
+        success: false,
+        message: "Refresh token missing",
+      });
+    }
+
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRET
+    );
+
+    const admin = await Supervisor.findById(decoded._id);
+
+    if (!admin || admin.refreshToken !== refreshToken) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid refresh token",
+      });
+    }
+
+    // ✅ NEW ACCESS TOKEN
+    const newAccessToken = admin.generateAccessToken();
+    admin.accessToken = newAccessToken;
+    await admin.save();
+
+    // ✅ SET NEW COOKIE
+    res.cookie("accessToken", newAccessToken, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: false,
+      maxAge: 10 * 1000, // ✅ 10 sec
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Access token refreshed",
+    });
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: "Refresh token expired",
+    });
+  }
 };
