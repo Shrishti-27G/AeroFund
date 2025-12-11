@@ -7,7 +7,7 @@ const formatINR = (num) => {
   if (num === null || num === undefined) return "0";
 
   // Prevent formatting extremely huge numbers incorrectly
-  if (num > 1e15) return num.toExponential(2); 
+  if (num > 1e15) return num.toExponential(2);
 
   return Number(num).toLocaleString("en-IN");
 };
@@ -104,6 +104,16 @@ const FinancialYearDetail = ({ yearData, selectedFY }) => {
                 Remark
               </td>
               <td className="px-4 py-3 text-right">{yearData.remark}</td>
+            </tr>
+            
+            {/* ⭐ NEW ROW — ALLOCATION TYPE */}
+            <tr className="border-b border-white/10">
+              <td className="px-4 py-3 font-medium text-slate-300">
+                Allocation Type
+              </td>
+              <td className="px-4 py-3 font-semibold text-yellow-300 text-right">
+                {yearData.allocationType || "N/A"}
+              </td>
             </tr>
 
             <tr>

@@ -41,7 +41,7 @@ const Stations = () => {
   // Automatically force card view below 1050px
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth <= 1050) {
+      if (window.innerWidth <= 1100) {
         setViewMode("card");
       }
     };
@@ -401,7 +401,7 @@ const Stations = () => {
         {/* ===================== VIEW MODE TOGGLE ===================== */}
         <div className="flex justify-end mb-5">
           {/* VIEW MODE TOGGLE */}
-          <div className="flex justify-end mb-6 max-[1050px]:hidden">
+          <div className="flex justify-end mb-6 max-[1100px]:hidden">
             <div
               className="
       flex items-center gap-2 sm:gap-3
@@ -678,6 +678,7 @@ const Stations = () => {
 
                   {/* NEW COLUMN → ALLOCATION TYPE */}
                   <th className="px-3 sm:px-5 py-3 text-left">Allocation Type</th>
+                  <th className="px-3 sm:px-5 py-3 text-left">Remark</th>
 
                   <th className="px-3 sm:px-5 py-3 text-left">Receipts</th>
                   <th className="px-3 sm:px-5 py-3 text-left">Action</th>
@@ -726,6 +727,12 @@ const Stations = () => {
                     <td className="px-3 sm:px-5 py-3 text-amber-300 font-medium whitespace-nowrap">
                       {s.allocationType || "N/A"}
                     </td>
+
+                    {/* ⭐ NEW → REMARK COLUMN */}
+                    <td className="px-3 sm:px-5 py-3 text-slate-300 text-[10px] sm:text-xs max-w-[180px] truncate">
+                      {s.remark || "N/A"}
+                    </td>
+
 
                     {/* RECEIPTS */}
                     <td className="px-3 sm:px-5 py-3 whitespace-nowrap">

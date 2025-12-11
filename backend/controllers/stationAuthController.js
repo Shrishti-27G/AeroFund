@@ -5,118 +5,17 @@ const accessCookieOptions = {
   httpOnly: true,
   secure: false, // true in production
   sameSite: "lax",
-  maxAge: 10 * 1000, // ✅ 10 seconds
+  maxAge: 1 * 24 * 60 * 60 * 1000, // ✅ 1 day
 };
 
 const refreshCookieOptions = {
   httpOnly: true,
   secure: false, // true in production
   sameSite: "lax",
-  maxAge: 2 * 24 * 60 * 60 * 1000, // ✅ 2 days
+  maxAge: 5 * 24 * 60 * 60 * 1000, // ✅ 5 days
 };
 
 
-
-
-// export const createStation = async (req, res) => {
-//   try {
-//     const { stationName, stationCode, password, email, financialYear } = req.body;
-
-//     console.log("req -> ", req.body);
-
-//     // ✅ FULL VALIDATION
-//     if (!stationName || !stationCode || !password || !email || !financialYear) {
-//       return res.status(400).json({
-//         message: "Station Name, Station Code, Email, Password and Financial Year are required",
-//       });
-//     }
-
-//     // ✅ SAFE FINANCIAL YEAR HANDLING (STRING OR NUMBER)
-//     let year;
-
-//     if (typeof financialYear === "string") {
-//       year = parseInt(financialYear.split("-")[0]);
-//     } else if (typeof financialYear === "number") {
-//       year = financialYear;
-//     } else {
-//       return res.status(400).json({
-//         message: "Invalid Financial Year format",
-//       });
-//     }
-
-//     if (isNaN(year)) {
-//       return res.status(400).json({
-//         message: "Invalid Financial Year format. Expected: 2025-2026 or 2025",
-//       });
-//     }
-
-//     // ✅ HASH PASSWORD BEFORE SAVING
-//     const hashedPassword = await bcrypt.hash(password, 10);
-
-//     // ✅ CHECK IF STATION ALREADY EXISTS
-//     let station = await Station.findOne({ stationCode });
-
-//     // ✅ IF STATION EXISTS → CHECK IF SAME YEAR DATA EXISTS
-//     if (station) {
-//       const yearExists = station.yearlyData.some(
-//         (item) => item.year === year
-//       );
-
-//       if (yearExists) {
-//         return res.status(409).json({
-//           message: `Station already exists for Financial Year ${year}`,
-//         });
-//       }
-
-//       // ✅ ADD NEW FINANCIAL YEAR DATA
-//       station.yearlyData.push({
-//         year,
-//         totalAllocated: 0,
-//         totalUtilized: 0,
-//         totalEstimated: 0,
-//         remark: "N/A",
-//         receipt: "Not Uploaded",
-//       });
-
-//       await station.save();
-
-//       return res.status(201).json({
-//         message: "New Financial Year added successfully",
-//         station,
-//       });
-//     }
-
-//     // ✅ IF STATION DOES NOT EXIST → CREATE NEW STATION
-//     const newStation = await Station.create({
-//       stationName,
-//       stationCode,
-//       email,
-//       password: hashedPassword,
-//       yearlyData: [
-//         {
-//           year,
-//           totalAllocated: 0,
-//           totalUtilized: 0,
-//           totalEstimated: 0,
-//           remark: "N/A",
-//           receipt: "Not Uploaded",
-//         },
-//       ],
-//     });
-
-//     res.status(201).json({
-//       message: "Station created successfully",
-//       station: newStation,
-//     });
-
-//   } catch (error) {
-//     console.error("Create Station Error:", error);
-//     res.status(500).json({
-//       message: "Server error while creating station",
-//       error: error.message,
-//     });
-//   }
-// };
 
 
 
@@ -235,7 +134,7 @@ export const loginStation = async (req, res) => {
       return res.status(400).json({ message: "Station code & password required" });
     }
 
-    const station = await Station.findOne({ stationCode:stationCode });
+    const station = await Station.findOne({ stationCode: stationCode });
     if (!station) {
       return res.status(404).json({ message: "Station not found" });
     }
