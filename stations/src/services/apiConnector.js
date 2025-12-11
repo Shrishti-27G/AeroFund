@@ -1,9 +1,7 @@
 import axios from "axios";
-import store from "../redux/store.js"
-import { setAdmin } from "../redux/slices/adminAuthSlice.js";
-import { authEnpoint } from "../services/apiEndpoints/adminAuthEndpoints.js";
-
-
+import store from "../redux/store";
+import { clearStation } from "../redux/slices/stationAuthSlice";
+import { stationEndpoints } from "./apiEndpoints/stationsEndpoints";
 
 export const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_APP_BASE_URL,
@@ -55,7 +53,7 @@ axiosInstance.interceptors.response.use(
       } catch (refreshError) {
         console.error("❌ Refresh token expired → Logging out");
 
-        store.dispatch(setAdmin(null));
+        store.dispatch(clearStation());
         window.location.href = "/";
         return Promise.reject(refreshError);
       }
@@ -64,3 +62,6 @@ axiosInstance.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+
+

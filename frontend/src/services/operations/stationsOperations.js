@@ -6,30 +6,6 @@ import { stationEndpoints } from "../apiEndpoints/stationsEndpoints.js"
 export const { Create_Stations_API, Get_All_Stations_API, Update_Budget_API } = stationEndpoints;
 
 
-// export const createStation = (stationName, stationCode, password, email) => async (dispatch) => {
-//     try {
-//         const response = await apiConnector(
-//             "POST",
-//             Create_Stations_API,
-//             { stationName, stationCode, password, email }
-//         );
-
-//         if (!response?.data) {
-//             toast.error("Station creation failed");
-//             return null;
-//         }
-
-//         toast.success(response.data.message || "Station created successfully");
-
-//         return response.data.station || response.data;
-
-//     } catch (error) {
-//         console.log("CREATE STATION ERROR →", error);
-//         const msg = error?.response?.data?.message || "Server Error";
-//         toast.error(msg);
-//         return null;
-//     }
-// };
 
 export const createStation = (
     stationName,
@@ -68,30 +44,6 @@ export const createStation = (
     }
 };
 
-
-// export const getAllStations = () => async (dispatch) => {
-//     try {
-//         const response = await apiConnector(
-//             "GET",
-//             Get_All_Stations_API
-//         );
-
-//         if (!response?.data) {
-//             toast.error("Failed to fetch stations");
-//             return null;
-//         }
-
-//         console.log("Res -> ", response);
-
-//         return response.data.stations || response.data;
-
-//     } catch (error) {
-//         console.log("GET ALL STATIONS ERROR →", error);
-//         const msg = error?.response?.data?.message || "Server Error";
-//         toast.error(msg);
-//         return null;
-//     }
-// };
 
 
 export const getAllStations = (year) => async (dispatch) => {
@@ -133,7 +85,7 @@ export const updateYearlyBudget = (
 
         const response = await apiConnector(
             "PUT",
-            `${Update_Budget_API}/${stationCode}/${year}`, // ✅ NOW THIS WILL BE CORRECT
+            `${Update_Budget_API}/${stationCode}/${year}`, 
             budgetData
         );
 

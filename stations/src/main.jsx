@@ -1,9 +1,46 @@
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
+import { createRoot } from "react-dom/client";
+import { createBrowserRouter, RouterProvider, Routes, Route } from "react-router-dom";
+import { Provider } from "react-redux";
+import store from "./redux/store.js";
+import "./index.css";
+import App from "./App.jsx";
 
-createRoot(document.getElementById('root')).render(
-  
-    <App />
+// ✅ Public Pages
+import Home from "./pages/Home.jsx";
+import Landing from "./pages/Landing.jsx";
+import Dashboard from "./components/stations/Dashboard.jsx";
+import ProtectedRoute from "./components/authComponent/ProtectedRoute.jsx";
 
-)
+
+export const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <App />,   // ✅ MAIN LAYOUT
+    children: [
+      // ✅ PUBLIC ROUTES
+      {
+        index: true,
+        element: <Landing />,
+      },
+      {
+        path: "home",
+        element: <Home />,
+      },
+      {
+        path: "dashboard",
+        element: (
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        )
+      }
+
+    ],
+  },
+]);
+
+createRoot(document.getElementById("root")).render(
+  <Provider store={store}>
+    <RouterProvider router={router} />
+  </Provider>
+);

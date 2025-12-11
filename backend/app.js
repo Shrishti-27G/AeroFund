@@ -9,10 +9,10 @@ import stationRoutes from "./routes/stationRoutes.js"
 const app = express();
 
 
- 
+
 app.use(
   cors({
-    origin: "http://localhost:3000", // frontend URL
+    origin: ["http://localhost:3000", "http://localhost:5173"], // frontend URL
     credentials: true,               // allow cookies
   })
 );
@@ -23,7 +23,7 @@ app.use(cookieParser());
 
 
 app.use(express.json({ limit: "5mb" }));
-  
+
 
 app.use(express.urlencoded({ extended: true }));
 
@@ -45,4 +45,3 @@ app.use("/admin-auth", adminAuthRoutes);
 app.use("/stations", stationRoutes)
 
 export default app;
-  

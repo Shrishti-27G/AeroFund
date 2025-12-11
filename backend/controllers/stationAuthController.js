@@ -1,64 +1,21 @@
 import { Station } from "../models/stationsModel.js";
 import bcrypt from "bcryptjs";
 
-const cookieOptions = {
+const accessCookieOptions = {
   httpOnly: true,
-  secure: false,
+  secure: false, // true in production
   sameSite: "lax",
-  maxAge: 24 * 60 * 60 * 1000, // 1 day
+  maxAge: 10 * 1000, // ✅ 10 seconds
 };
 
-// ----------------------------------------
-// ✅ SIGNUP STATION
-// ----------------------------------------
-// export const createStation = async (req, res) => {
-//   try {
-//     const { stationName, stationCode, password, email } = req.body;
+const refreshCookieOptions = {
+  httpOnly: true,
+  secure: false, // true in production
+  sameSite: "lax",
+  maxAge: 2 * 24 * 60 * 60 * 1000, // ✅ 2 days
+};
 
-//     console.log("req -> ", req.body);
 
-//     // ✅ VALIDATION
-//     if (!stationName || !stationCode || !password || !email) {
-//       return res.status(400).json({
-//         message: "Station Name, Station Code, Email and Password are required",
-//       });
-//     }
-
-//     // ✅ CHECK DUPLICATE STATION CODE
-//     const existingStation = await Station.findOne({ stationCode });
-//     if (existingStation) {
-//       return res.status(409).json({ message: "Station already registered" });
-//     }
-
-//     // ✅ CHECK DUPLICATE EMAIL
-//     const existingEmail = await Station.findOne({ email });
-//     if (existingEmail) {
-//       return res.status(409).json({ message: "Email already in use" });
-//     }
-
-//     // ✅ CREATE STATION
-//     const station = await Station.create({
-//       stationName,
-//       stationCode,
-//       password,
-//       email, // ✅ ADDING EMAIL
-//     });
-
-//     res.status(201).json({
-//       message: "Station registered successfully",
-//       station: {
-//         _id: station._id,
-//         stationName: station.stationName,
-//         stationCode: station.stationCode,
-//         email: station.email,
-//       },
-//     });
-
-//   } catch (error) {
-//     console.error("Create Station Error:", error);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
 
 
 // export const createStation = async (req, res) => {
@@ -74,14 +31,27 @@ const cookieOptions = {
 //       });
 //     }
 
-//     // ✅ ✅ FIX: Extract starting year safely from "2025-2026"
-//     const year = parseInt(financialYear.split("-")[0]);
+//     // ✅ SAFE FINANCIAL YEAR HANDLING (STRING OR NUMBER)
+//     let year;
+
+//     if (typeof financialYear === "string") {
+//       year = parseInt(financialYear.split("-")[0]);
+//     } else if (typeof financialYear === "number") {
+//       year = financialYear;
+//     } else {
+//       return res.status(400).json({
+//         message: "Invalid Financial Year format",
+//       });
+//     }
 
 //     if (isNaN(year)) {
 //       return res.status(400).json({
-//         message: "Invalid Financial Year format. Expected: 2025-2026",
+//         message: "Invalid Financial Year format. Expected: 2025-2026 or 2025",
 //       });
 //     }
+
+//     // ✅ HASH PASSWORD BEFORE SAVING
+//     const hashedPassword = await bcrypt.hash(password, 10);
 
 //     // ✅ CHECK IF STATION ALREADY EXISTS
 //     let station = await Station.findOne({ stationCode });
@@ -94,11 +64,11 @@ const cookieOptions = {
 
 //       if (yearExists) {
 //         return res.status(409).json({
-//           message: `Station already exists for Financial Year ${financialYear}`,
+//           message: `Station already exists for Financial Year ${year}`,
 //         });
 //       }
 
-//       // ✅ ADD NEW YEAR DATA INTO EXISTING STATION
+//       // ✅ ADD NEW FINANCIAL YEAR DATA
 //       station.yearlyData.push({
 //         year,
 //         totalAllocated: 0,
@@ -116,12 +86,12 @@ const cookieOptions = {
 //       });
 //     }
 
-//     // ✅ IF STATION DOES NOT EXIST → CREATE NEW
+//     // ✅ IF STATION DOES NOT EXIST → CREATE NEW STATION
 //     const newStation = await Station.create({
 //       stationName,
 //       stationCode,
 //       email,
-//       password,
+//       password: hashedPassword,
 //       yearlyData: [
 //         {
 //           year,
@@ -143,11 +113,17 @@ const cookieOptions = {
 //     console.error("Create Station Error:", error);
 //     res.status(500).json({
 //       message: "Server error while creating station",
+//       error: error.message,
 //     });
 //   }
 // };
 
 
+
+
+// ----------------------------------------
+// ✅ LOGIN STATION
+// ----------------------------------------
 
 export const createStation = async (req, res) => {
   try {
@@ -158,11 +134,12 @@ export const createStation = async (req, res) => {
     // ✅ FULL VALIDATION
     if (!stationName || !stationCode || !password || !email || !financialYear) {
       return res.status(400).json({
-        message: "Station Name, Station Code, Email, Password and Financial Year are required",
+        message:
+          "Station Name, Station Code, Email, Password and Financial Year are required",
       });
     }
 
-    // ✅ SAFE FINANCIAL YEAR HANDLING (STRING OR NUMBER)
+    // ✅ SAFE FINANCIAL YEAR HANDLING
     let year;
 
     if (typeof financialYear === "string") {
@@ -180,9 +157,6 @@ export const createStation = async (req, res) => {
         message: "Invalid Financial Year format. Expected: 2025-2026 or 2025",
       });
     }
-
-    // ✅ HASH PASSWORD BEFORE SAVING
-    const hashedPassword = await bcrypt.hash(password, 10);
 
     // ✅ CHECK IF STATION ALREADY EXISTS
     let station = await Station.findOne({ stationCode });
@@ -209,7 +183,7 @@ export const createStation = async (req, res) => {
         receipt: "Not Uploaded",
       });
 
-      await station.save();
+      await station.save(); // ✅ model will NOT re-hash password here
 
       return res.status(201).json({
         message: "New Financial Year added successfully",
@@ -217,12 +191,12 @@ export const createStation = async (req, res) => {
       });
     }
 
-    // ✅ IF STATION DOES NOT EXIST → CREATE NEW STATION
+    // ✅ CREATE NEW STATION (PLAIN PASSWORD → MODEL HASHES IT)
     const newStation = await Station.create({
       stationName,
       stationCode,
       email,
-      password: hashedPassword,
+      password, // ✅ DO NOT HASH HERE
       yearlyData: [
         {
           year,
@@ -239,7 +213,6 @@ export const createStation = async (req, res) => {
       message: "Station created successfully",
       station: newStation,
     });
-
   } catch (error) {
     console.error("Create Station Error:", error);
     res.status(500).json({
@@ -251,19 +224,18 @@ export const createStation = async (req, res) => {
 
 
 
-
-// ----------------------------------------
-// ✅ LOGIN STATION
-// ----------------------------------------
 export const loginStation = async (req, res) => {
   try {
     const { stationCode, password } = req.body;
+
+    console.log("Body -> ", req.body);
+
 
     if (!stationCode || !password) {
       return res.status(400).json({ message: "Station code & password required" });
     }
 
-    const station = await Station.findOne({ stationCode });
+    const station = await Station.findOne({ stationCode:stationCode });
     if (!station) {
       return res.status(404).json({ message: "Station not found" });
     }
@@ -273,57 +245,121 @@ export const loginStation = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const accessToken = station.generateAccessToken();
-    const refreshToken = station.generateRefreshToken();
+    // ✅ TOKENS
+    const accessToken = station.generateAccessToken();   // 10 sec
+    const refreshToken = station.generateRefreshToken(); // 2 days
 
+    // ✅ SAVE IN DB
     station.accessToken = accessToken;
     station.refreshToken = refreshToken;
     await station.save({ validateBeforeSave: false });
 
+    // ✅ COOKIES
     res
-      .cookie("accessToken", accessToken, cookieOptions)
-      .cookie("refreshToken", refreshToken, cookieOptions)
-      .status(200)
-      .json({
-        message: "Login successful",
-        station: {
-          _id: station._id,
-          stationName: station.stationName,
-          stationCode: station.stationCode,
-        },
-      });
+      .cookie("accessToken", accessToken, accessCookieOptions)
+      .cookie("refreshToken", refreshToken, refreshCookieOptions);
+
+    // ✅ SAFE RESPONSE
+    const stationData = station.toObject();
+    delete stationData.password;
+    delete stationData.accessToken;
+    delete stationData.refreshToken;
+
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      station: stationData,
+    });
   } catch (error) {
     console.error("Login Station Error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
+
 // ----------------------------------------
 // ✅ LOGOUT STATION
 // ----------------------------------------
 export const logoutStation = async (req, res) => {
   try {
-    const stationId = req.user?._id;
+    const stationId = req.station?._id; // ✅ MATCHING logoutAdmin style
 
     if (!stationId) {
       return res.status(400).json({ message: "Invalid request" });
     }
 
+    // Clear tokens in DB
     await Station.findByIdAndUpdate(
       stationId,
-      {
-        $set: { accessToken: null, refreshToken: null },
-      },
+      { $set: { accessToken: null, refreshToken: null } },
       { new: true }
     );
 
+    // Clear cookies
     res
-      .clearCookie("accessToken", cookieOptions)
-      .clearCookie("refreshToken", cookieOptions)
+      .clearCookie("accessToken", {
+        httpOnly: true,
+        sameSite: "strict",
+        secure: process.env.NODE_ENV === "production",
+      })
+      .clearCookie("refreshToken", {
+        httpOnly: true,
+        sameSite: "strict",
+        secure: process.env.NODE_ENV === "production",
+      })
       .status(200)
-      .json({ message: "Logged out successfully" });
+      .json({ success: true, message: "Logged out successfully" });
+
   } catch (error) {
     console.error("Logout Station Error:", error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+
+
+export const refreshStationAccessToken = async (req, res) => {
+  try {
+    const refreshToken = req.cookies?.refreshToken;
+
+    if (!refreshToken) {
+      return res.status(401).json({
+        success: false,
+        message: "Refresh token missing",
+      });
+    }
+
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRET
+    );
+
+    const station = await Station.findById(decoded._id);
+
+    if (!station || station.refreshToken !== refreshToken) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid refresh token",
+      });
+    }
+
+    // ✅ NEW ACCESS TOKEN
+    const newAccessToken = station.generateAccessToken();
+    station.accessToken = newAccessToken;
+    await station.save({ validateBeforeSave: false });
+
+    // ✅ SET COOKIE AGAIN
+    res.cookie("accessToken", newAccessToken, accessCookieOptions);
+
+    return res.status(200).json({
+      success: true,
+      message: "Access token refreshed",
+    });
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: "Refresh token expired",
+    });
   }
 };

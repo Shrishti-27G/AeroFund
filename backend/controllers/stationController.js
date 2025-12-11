@@ -1,310 +1,46 @@
 import { Station } from "../models/stationsModel.js";
 import { uploadImageToCloudinary } from "../config/imageUploader.js";
 
-// export const getAllStations = async (req, res) => {
+
+
+// export const getStationByFinancialYear = async (req, res) => {
 //   try {
-//     const stations = await Station.find().select(
-//       "_id stationName stationCode email totalAllocated totalUtilized totalEstimated remark receipt createdAt"
+//     const { stationCode, financialYear } = req.params;
+
+//     const station = await Station.findOne(
+//       {
+//         stationCode,
+//         "yearlyData.financialYear": financialYear,
+//       },
+//       {
+//         stationName: 1,
+//         stationCode: 1,
+//         email: 1,
+//         "yearlyData.$": 1, // ✅ Only matched financial year
+//       }
 //     );
 
-//     if (!stations || stations.length === 0) {
+//     if (!station) {
 //       return res.status(404).json({
 //         success: false,
-//         message: "No stations found",
+//         message: "No data found for this financial year",
 //       });
 //     }
 
 //     res.status(200).json({
 //       success: true,
-//       count: stations.length,
-//       stations,
-//     });
-
-//   } catch (error) {
-//     console.error("Get All Stations Error:", error);
-
-//     res.status(500).json({
-//       success: false,
-//       message: "Server error while fetching stations",
-//     });
-//   }
-// };
-
-
-export const getStationByFinancialYear = async (req, res) => {
-  try {
-    const { stationCode, financialYear } = req.params;
-
-    const station = await Station.findOne(
-      {
-        stationCode,
-        "yearlyData.financialYear": financialYear,
-      },
-      {
-        stationName: 1,
-        stationCode: 1,
-        email: 1,
-        "yearlyData.$": 1, // ✅ Only matched financial year
-      }
-    );
-
-    if (!station) {
-      return res.status(404).json({
-        success: false,
-        message: "No data found for this financial year",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      station,
-    });
-
-  } catch (error) {
-    console.error("Financial Year Fetch Error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
-  }
-};
-
-
-
-
-
-// export const updateYearlyBudget = async (req, res) => {
-//   try {
-//     const { stationCode, year } = req.params;
-//     const { totalAllocated, totalUtilized, totalEstimated, remark, receipt } =
-//       req.body;
-
-//     console.log("Edit req -> ", req.body);
-
-
-//     // ✅ BASIC VALIDATION
-//     if (!stationCode || !year) {
-//       return res.status(400).json({
-//         message: "Station Code and Year are required",
-//       });
-//     }
-
-//     const parsedYear = Number(year);
-
-//     if (isNaN(parsedYear)) {
-//       return res.status(400).json({
-//         message: "Invalid year format",
-//       });
-//     }
-
-//     // ✅ FIND STATION
-//     const station = await Station.findOne({ stationCode });
-
-//     if (!station) {
-//       return res.status(404).json({
-//         message: "Station not found",
-//       });
-//     }
-
-//     // ✅ FIND EXISTING YEAR RECORD
-//     let yearlyRecord = station.yearlyData.find(
-//       (item) => item.year === parsedYear
-//     );
-
-//     // ✅ ✅ IF YEAR DOES NOT EXIST → CREATE IT
-//     if (!yearlyRecord) {
-//       const newYearRecord = {
-//         year: parsedYear,
-//         totalAllocated: totalAllocated ?? 0,
-//         totalUtilized: totalUtilized ?? 0,
-//         totalEstimated: totalEstimated ?? 0,
-//         remark: remark ?? "N/A",
-//         receipt: receipt ?? "Not Uploaded",
-//       };
-
-//       station.yearlyData.push(newYearRecord);
-//       await station.save();
-
-//       return res.status(201).json({
-//         message: `Yearly budget created successfully for ${parsedYear}`,
-//         createdYear: newYearRecord,
-//         station,
-//       });
-//     }
-
-//     // ✅ ✅ IF YEAR EXISTS → UPDATE ONLY PROVIDED FIELDS
-//     if (totalAllocated !== undefined)
-//       yearlyRecord.totalAllocated = totalAllocated;
-
-//     if (totalUtilized !== undefined)
-//       yearlyRecord.totalUtilized = totalUtilized;
-
-//     if (totalEstimated !== undefined)
-//       yearlyRecord.totalEstimated = totalEstimated;
-
-//     if (remark !== undefined)
-//       yearlyRecord.remark = remark;
-
-//     if (receipt !== undefined)
-//       yearlyRecord.receipt = receipt;
-
-//     // ✅ SAVE UPDATED DATA
-//     await station.save();
-
-//     res.status(200).json({
-//       message: "Yearly budget updated successfully",
-//       updatedYear: yearlyRecord,
 //       station,
 //     });
 
 //   } catch (error) {
-//     console.error("Update/Create Yearly Budget Error:", error);
-//     res.status(500).json({
-//       message: "Server error while updating yearly budget",
-//       error: error.message,
-//     });
-//   }
-// };
-
-
-
-
-
-
-// export const getAllStations = async (req, res) => {
-//   try {
-//     const stations = await Station.aggregate([
-//       // ✅ Break yearlyData array
-//       { $unwind: "$yearlyData" },
-
-//       // ✅ Sort each station's yearly data by latest year FIRST
-//       { $sort: { "yearlyData.year": -1 } },
-
-//       // ✅ Group back to ONE document per station
-//       {
-//         $group: {
-//           _id: "$_id",
-//           stationName: { $first: "$stationName" },
-//           stationCode: { $first: "$stationCode" },
-//           email: { $first: "$email" },
-
-//           // ✅ LATEST FINANCIAL YEAR DATA ONLY
-//           financialYear: { $first: "$yearlyData.year" },
-//           totalAllocated: { $first: "$yearlyData.totalAllocated" },
-//           totalUtilized: { $first: "$yearlyData.totalUtilized" },
-//           totalEstimated: { $first: "$yearlyData.totalEstimated" },
-//           remark: { $first: "$yearlyData.remark" },
-//           receipt: { $first: "$yearlyData.receipt" },
-
-//           createdAt: { $first: "$createdAt" },
-//           updatedAt: { $first: "$updatedAt" },
-//         },
-//       },
-
-//       // ✅ Optional: sort stations alphabetically
-//       { $sort: { stationName: 1 } },
-//     ]);
-
-//     if (!stations || stations.length === 0) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "No stations found",
-//       });
-//     }
-
-//     res.status(200).json({
-//       success: true,
-//       count: stations.length,
-//       stations,
-//     });
-
-//   } catch (error) {
-//     console.error("Get All Stations Error:", error);
-
+//     console.error("Financial Year Fetch Error:", error);
 //     res.status(500).json({
 //       success: false,
-//       message: "Server error while fetching stations",
+//       message: "Server error",
 //     });
 //   }
 // };
 
-
-// export const getAllStations = async (req, res) => {
-//   try {
-//     const { year } = req.query; // ✅ READ YEAR FROM QUERY
-//     const filterYear = year ? Number(year) : null;
-
-//     console.log("YEar -> ", req.query);
-
-
-//     const pipeline = [];
-
-//     // ✅ BREAK yearlyData ARRAY
-//     pipeline.push({ $unwind: "$yearlyData" });
-
-//     // ✅ IF YEAR IS PROVIDED → FILTER THAT YEAR
-//     if (filterYear) {
-//       pipeline.push({
-//         $match: {
-//           "yearlyData.year": filterYear,
-//         },
-//       });
-//     }
-
-//     // ✅ SORT LATEST FIRST (ONLY USED WHEN NO YEAR FILTER)
-//     pipeline.push({
-//       $sort: { "yearlyData.year": -1 },
-//     });
-
-//     // ✅ GROUP BACK TO ONE DOCUMENT PER STATION
-//     pipeline.push({
-//       $group: {
-//         _id: "$_id",
-//         stationName: { $first: "$stationName" },
-//         stationCode: { $first: "$stationCode" },
-//         email: { $first: "$email" },
-
-//         // ✅ YEARLY DATA (FILTERED OR LATEST)
-//         financialYear: { $first: "$yearlyData.year" },
-//         totalAllocated: { $first: "$yearlyData.totalAllocated" },
-//         totalUtilized: { $first: "$yearlyData.totalUtilized" },
-//         totalEstimated: { $first: "$yearlyData.totalEstimated" },
-//         remark: { $first: "$yearlyData.remark" },
-//         receipt: { $first: "$yearlyData.receipt" },
-
-//         createdAt: { $first: "$createdAt" },
-//         updatedAt: { $first: "$updatedAt" },
-//       },
-//     });
-
-//     // ✅ SORT STATIONS ALPHABETICALLY
-//     pipeline.push({ $sort: { stationName: 1 } });
-
-//     const stations = await Station.aggregate(pipeline);
-
-//     if (!stations || stations.length === 0) {
-//       return res.status(200).json({
-//         success: true,
-//         count: 0,
-//         stations: [],
-//       });
-//     }
-
-//     res.status(200).json({
-//       success: true,
-//       count: stations.length,
-//       stations,
-//     });
-
-//   } catch (error) {
-//     console.error("Get All Stations Error:", error);
-
-//     res.status(500).json({
-//       success: false,
-//       message: "Server error while fetching stations",
-//     });
-//   }
-// };
 
 export const updateYearlyBudget = async (req, res) => {
   try {
@@ -428,9 +164,6 @@ export const updateYearlyBudget = async (req, res) => {
     });
   }
 };
-
-
-
 
 
 export const getAllStations = async (req, res) => {
@@ -566,6 +299,148 @@ export const getAllStations = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Server error while fetching stations",
+    });
+  }
+};
+
+
+// export const getStationByFinancialYear = async (req, res) => {
+//   try {
+//     const { stationCode } = req.params;
+//     let { year } = req.params;
+
+//     // If frontend didn't pass FY → auto use CURRENT FY
+//     if (!year) {
+//       year = getCurrentFinancialYear();
+//     }
+
+//     const station = await Station.findOne(
+//       {
+//         stationCode,
+//         "yearlyData.year": Number(year),
+//       },
+//       {
+//         stationName: 1,
+//         stationCode: 1,
+//         email: 1,
+//         "yearlyData.$": 1,   // return only matched FY
+//       }
+//     );
+
+//     if (!station) {
+//       return res.status(404).json({
+//         success: false,
+//         message: `No data found for FY ${year}-${year + 1}`,
+//       });
+//     }
+
+//     res.status(200).json({
+//       success: true,
+//       year,
+//       station: station,
+//     });
+
+//   } catch (error) {
+//     console.error("Financial Year Fetch Error:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Server error",
+//     });
+//   }
+// };
+
+export const getStationByFinancialYear = async (req, res) => {
+  try {
+    const { stationCode } = req.params;
+    let { year } = req.params;
+
+    // 👉 Auto-detect current FY if not passed
+    if (!year) {
+      const today = new Date();
+      const yr = today.getFullYear();
+      const mon = today.getMonth() + 1;
+      year = mon >= 4 ? yr : yr - 1;
+    }
+
+    const station = await Station.findOne(
+      {
+        stationCode,
+        "yearlyData.year": Number(year),
+      },
+      {
+        stationName: 1,
+        stationCode: 1,
+        email: 1,
+        "yearlyData.$": 1 // returns ONLY the matched FY object with ALL subfields
+      }
+    );
+
+    if (!station) {
+      return res.status(404).json({
+        success: false,
+        message: `No data found for FY ${year}-${year + 1}`,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      year: Number(year),
+      station,
+    });
+
+  } catch (error) {
+    console.error("Financial Year Fetch Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+
+
+export const updateRemark = async (req, res) => {
+  try {
+    const { stationCode, year } = req.params;
+    const { remark } = req.body;
+
+    if (!remark) {
+      return res.status(400).json({
+        success: false,
+        message: "Remark is required",
+      });
+    }
+
+    const station = await Station.findOneAndUpdate(
+      {
+        stationCode,
+        "yearlyData.year": Number(year),
+      },
+      {
+        $set: {
+          "yearlyData.$.remark": remark,
+        },
+      },
+      { new: true }
+    );
+
+    if (!station) {
+      return res.status(404).json({
+        success: false,
+        message: "Station or financial year not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Remark updated successfully",
+      station,
+    });
+  } catch (error) {
+    console.error("Remark Update Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
     });
   }
 };

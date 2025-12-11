@@ -9,6 +9,8 @@ import {
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
+import BudgetSummary from "./BudgetSummary.jsx";
+
 
 /* ✅ RETURN NUMBER YEAR */
 const getCurrentFinancialYear = () => {
@@ -32,6 +34,26 @@ const Stations = () => {
   const [receiptList, setReceiptList] = useState([]);
   const [viewReceiptIndex, setViewReceiptIndex] = useState(0);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [viewMode, setViewMode] = useState("card");
+
+
+
+  // Automatically force card view below 1050px
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth <= 1050) {
+        setViewMode("card");
+      }
+    };
+
+    handleResize(); // Run initially
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+
+
 
 
   /* ✅ DEFAULT LATEST FY ON LOAD */
@@ -265,23 +287,69 @@ const Stations = () => {
 
             <button
               onClick={() => downloadBudgetReport(stations, selectedFY)}
-              className="relative  inline-flex items-center justify-center rounded-2xl bg-white/10 px-3.5 py-2.5 text-xs font-semibold text-slate-50 border border-white/20 hover:bg-white/20 hover:border-sky-300/60 transition"
+              className="
+    relative inline-flex items-center justify-center
+    rounded-xl sm:rounded-2xl
+    bg-white/10
+    px-3 sm:px-3.5
+    py-2 sm:py-2.5
+    text-[11px] sm:text-xs
+    font-semibold
+    text-slate-50
+    border border-white/20
+    hover:bg-white/20
+    hover:border-sky-300/60
+    transition
+    whitespace-nowrap
+  "
             >
               Download Report (PDF)
             </button>
 
+
             {/* FY DROPDOWN */}
-            <div className="inline-flex items-center gap-2 rounded-2xl bg-white/5 border border-white/15 px-3 py-2 backdrop-blur-xl shadow-sm shadow-black/40">
-              <span className="text-xs text-slate-300/80">Financial Year</span>
+            <div
+              className="
+    inline-flex items-center gap-1.5 sm:gap-2
+    rounded-xl sm:rounded-2xl
+    bg-white/5
+    border border-white/15
+    px-2.5 sm:px-3
+    py-1.5 sm:py-2
+    backdrop-blur-xl
+    shadow-sm shadow-black/40
+    max-w-full
+    justify-center
+  "
+            >
+              {/* ✅ LABEL */}
+              <span
+                className="
+      text-[10px] sm:text-xs
+      text-slate-300/80
+      whitespace-nowrap
+    "
+              >
+                Financial Year
+              </span>
+
+              {/* ✅ SELECT */}
               <select
                 value={selectedFY}
                 onChange={(e) => setSelectedFY(Number(e.target.value))}
-                className="bg-transparent text-sm px-2 text-slate-50 border-none focus:outline-none focus:ring-0 cursor-pointer"
+                className="
+      bg-transparent
+      text-[11px] sm:text-sm
+      px-1.5 sm:px-2
+      text-slate-50
+      border-none
+      focus:outline-none
+      focus:ring-0
+      cursor-pointer
+      min-w-[90px] sm:min-w-[130px]
+    "
               >
-                <option
-                  value={getCurrentFinancialYear()}
-                  className="bg-slate-900"
-                >
+                <option value={getCurrentFinancialYear()} className="bg-slate-900">
                   {formatFY(getCurrentFinancialYear())} (Current)
                 </option>
                 <option value={2024} className="bg-slate-900">
@@ -293,167 +361,437 @@ const Stations = () => {
               </select>
             </div>
 
+
             {/* CREATE BUTTON */}
             <button
               onClick={() => setOpenModal(true)}
-              className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-blue-500 to-sky-400 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/40 hover:shadow-blue-400/60 hover:scale-[1.02] active:scale-[0.99] transition-transform"
+              className="
+    inline-flex items-center justify-center
+    rounded-xl sm:rounded-2xl
+    bg-gradient-to-r from-blue-500 to-sky-400
+    px-4 sm:px-5
+    py-2 sm:py-2.5
+    text-xs sm:text-sm
+    font-semibold text-white
+    shadow-lg shadow-blue-500/40
+    hover:shadow-blue-400/60
+    hover:scale-[1.03]
+    active:scale-[0.98]
+    transition-transform
+    whitespace-nowrap
+  "
             >
-              <span className="mr-1.5 ">＋</span>
+              <span className="mr-1 sm:mr-1.5 text-base leading-none">＋</span>
               New Station
             </button>
+
           </div>
         </div>
 
-        {/* STATIONS GRID */}
-        {stations.length === 0 ? (
-          <div className="mt-12 flex justify-center">
-            <div className="rounded-3xl border border-dashed border-slate-600/60 bg-slate-900/40 px-6 py-10 text-center backdrop-blur-xl max-w-md">
-              <p className="text-sm text-slate-300/80">
-                No stations found yet. Create your first station to start
-                managing budgets.
-              </p>
+
+
+        <BudgetSummary stations={stations} selectedFY={selectedFY} />
+
+
+
+
+
+
+
+        {/* ===================== VIEW MODE TOGGLE ===================== */}
+        <div className="flex justify-end mb-5">
+          {/* VIEW MODE TOGGLE */}
+          <div className="flex justify-end mb-6 max-[1050px]:hidden">
+            <div
+              className="
+      flex items-center gap-2 sm:gap-3
+      bg-white/10 border border-white/20
+      px-3 sm:px-4 py-2
+      rounded-2xl
+      backdrop-blur-xl
+      shadow-lg shadow-black/20
+    "
+            >
+              <span className="text-[10px] sm:text-xs text-slate-300 tracking-wide">
+                View Mode
+              </span>
+
+              {/* CARD BUTTON */}
+              <button
+                onClick={() => setViewMode("card")}
+                className={`
+        flex items-center gap-1.5
+        px-3 sm:px-4 py-1.5
+        text-[10px] sm:text-xs font-semibold rounded-xl
+        transition-all duration-300
+        ${viewMode === "card"
+                    ? "bg-sky-500 text-white shadow-md shadow-sky-400/40 scale-105"
+                    : "bg-white/10 text-slate-300 hover:bg-white/20"
+                  }
+      `}
+              >
+                <svg
+                  className="w-3.5 h-3.5 sm:w-4 sm:h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M3 7h7V3H3v4zm0 14h7v-6H3v6zm11 0h7v-10h-7v10zm0-14h7V3h-7v4z" />
+                </svg>
+                Card
+              </button>
+
+              {/* TABLE BUTTON */}
+              <button
+                onClick={() => setViewMode("table")}
+                className={`
+        flex items-center gap-1.5
+        px-3 sm:px-4 py-1.5
+        text-[10px] sm:text-xs font-semibold rounded-xl
+        transition-all duration-300
+        ${viewMode === "table"
+                    ? "bg-sky-500 text-white shadow-md shadow-sky-400/40 scale-105"
+                    : "bg-white/10 text-slate-300 hover:bg-white/20"
+                  }
+      `}
+              >
+                <svg
+                  className="w-3.5 h-3.5 sm:w-4 sm:h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M3 10h18M3 3h18M3 17h18" />
+                </svg>
+                Table
+              </button>
             </div>
           </div>
-        ) : (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {stations.map((station) => {
-              const hasBudget =
-                Number(station.financialYear) === Number(selectedFY);
 
-              return (
-                <div
-                  key={station._id}
-                  className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 px-5 py-5 
-  shadow-[0_18px_45px_rgba(15,23,42,0.7)] backdrop-blur-2xl 
-  transition-transform duration-300 hover:-translate-y-1 
-  hover:shadow-[0_25px_60px_rgba(56,189,248,0.45)]
-  flex flex-col h-full"
-                >
-                  {/* Soft highlight background */}
-                  <div className="pointer-events-none absolute inset-x-0 -top-16 h-32 bg-gradient-to-b from-sky-400/40 via-transparent to-transparent opacity-70 blur-3xl" />
+        </div>
 
-                  <div className="relative flex flex-col items-start gap-3">
-                    <div>
-                      <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400/80">
-                        {station.stationCode}
-                      </p>
-                      <h3 className="mt-1 text-base font-semibold text-slate-50">
-                        {station.stationName}
-                      </h3>
-                      <p className="mt-1 text-[11px] text-slate-400">
-                        {station.email}
-                      </p>
-                    </div>
+        {/* ============================================================= */}
+        {/* =============== CARD VIEW (DEFAULT) ========================= */}
+        {/* ============================================================= */}
 
-                    <div className="rounded-full bg-slate-900/50 px-2.5 py-1 text-[12px] text-slate-300 border border-white/10">
-                      FY {formatFY(selectedFY)}
-                    </div>
-                  </div>
-
-                  <div className="mt-4 rounded-2xl bg-slate-950/40 border border-white/5 px-3 py-3 text-xs text-slate-200 space-y-1.5">
-                    {hasBudget ? (
-                      <>
-                        <p className="pt-1 text-[11px] text-cyan-200">
-                          Allocation Type:{" "}
-                          <span className="font-medium text-slate-100">
-                            {station.allocationType || "N/A"}
-                          </span>
-                        </p>
-                        <div className="flex justify-between">
-                          <span className="text-slate-400">Allocated</span>
-                          <span className="font-medium text-sky-300">
-                            ₹{station.totalAllocated}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-400">Utilized</span>
-                          <span className="font-medium text-emerald-300">
-                            ₹{station.totalUtilized}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-400">Estimated</span>
-                          <span className="font-medium text-violet-300">
-                            ₹{station.totalEstimated}
-                          </span>
-                        </div>
-
-                        <p className="pt-1 text-[11px] text-sky-200">
-                          Remark:{" "}
-                          <span className="font-medium text-slate-100">
-                            {station.remark}
-                          </span>
-                        </p>
-
-
-                        <p className="text-[11px] text-indigo-200/90 flex items-start justify-between gap-2">
-                          <span>
-                            Receipts:{" "}
-                            <span className="font-medium text-slate-100">
-                              {station.receipts && station.receipts.length > 0
-                                ? `Available (${station.receipts.length})`
-                                : "Not Uploaded"}
-                            </span>
-                          </span>
-
-                          {station.receipts && station.receipts.length > 0 && (
-                            <button
-                              onClick={() => {
-                                setReceiptList(station.receipts); // ✅ poori list modal ko
-                                setViewReceiptIndex(0);           // ✅ pehli image se start
-                              }}
-                              className="rounded-full bg-indigo-500/20 px-3 py-1 text-[10px] font-semibold text-indigo-200 border border-indigo-400/30 hover:bg-indigo-500/30 transition"
-                            >
-                              View
-                            </button>
-                          )}
-                        </p>
-
-                        <p className="pt-1 text-[11px] text-amber-200 leading-relaxed">
-                          Description:{" "}
-                          <span className="font-medium text-slate-100">
-                            {station.description ? station.description : "N/A"}
-                          </span>
-                        </p>
-
-
-
-                      </>
-                    ) : (
-                      <p className="py-3 text-center text-[11px] text-rose-300">
-                        ❌ Budget not present for {formatFY(selectedFY)}
-                      </p>
-                    )}
-                  </div>
-
-
-
-                  <button
-                    onClick={() => {
-                      setEditStation(station);
-                      setEditForm({
-                        totalAllocated: hasBudget ? station.totalAllocated : "",
-                        totalUtilized: hasBudget ? station.totalUtilized : "",
-                        totalEstimated: hasBudget ? station.totalEstimated : "",
-                        remark: station.remark || "N/A",
-                        receipt: station.receipt || "",
-                        description: station.description || "",
-                        allocationType: station.allocationType || "",  // ✅ ADD
-                      });
-                      setOpenEditModal(true);
-                    }}
-                    className="relative mt-auto inline-flex w-full items-center justify-center rounded-2xl 
-  bg-white/10 px-3.5 py-2.5 text-xs font-semibold text-slate-50 
-  border border-white/20 hover:bg-white/20 hover:border-sky-300/60 transition"
-                  >
-                    {hasBudget ? "Edit Budget" : "Add Budget"}
-                  </button>
-
+        {viewMode === "card" && (
+          <>
+            {stations.length === 0 ? (
+              <div className="mt-12 flex justify-center">
+                <div className="rounded-3xl border border-dashed border-slate-600/60 bg-slate-900/40 px-6 py-10 text-center backdrop-blur-xl max-w-md">
+                  <p className="text-sm text-slate-300/80">
+                    No stations found yet. Create your first station to start managing budgets.
+                  </p>
                 </div>
-              );
-            })}
+              </div>
+            ) : (
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {stations.map((station) => {
+                  const hasBudget = Number(station.financialYear) === Number(selectedFY);
+
+                  return (
+                    <div
+                      key={station._id}
+                      className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 px-5 py-5 
+              shadow-[0_18px_45px_rgba(15,23,42,0.7)] backdrop-blur-2xl 
+              transition-transform duration-300 hover:-translate-y-1 
+              hover:shadow-[0_25px_60px_rgba(56,189,248,0.45)]
+              flex flex-col h-full"
+                    >
+                      {/* Soft highlight */}
+                      <div className="pointer-events-none absolute inset-x-0 -top-16 h-32 bg-gradient-to-b from-sky-400/40 via-transparent to-transparent opacity-70 blur-3xl" />
+
+                      {/* Header */}
+                      <div className="relative flex flex-col items-start gap-3">
+                        <div>
+                          <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400/80">
+                            {station.stationCode}
+                          </p>
+                          <h3 className="mt-1 text-base font-semibold text-slate-50">
+                            {station.stationName}
+                          </h3>
+                          <p className="mt-1 text-[11px] text-slate-400">
+                            {station.email}
+                          </p>
+                        </div>
+
+                        <div className="rounded-full bg-slate-900/50 px-2.5 py-1 text-[12px] text-slate-300 border border-white/10">
+                          FY {formatFY(selectedFY)}
+                        </div>
+                      </div>
+
+                      {/* Content */}
+                      <div className="mt-4 rounded-2xl bg-slate-950/40 border border-white/5 px-3 py-3 text-xs text-slate-200 space-y-1.5">
+                        {hasBudget ? (
+                          <>
+                            <p className="pt-1 text-[11px] text-cyan-200">
+                              Allocation Type:{" "}
+                              <span className="font-medium text-slate-100">
+                                {station.allocationType || "N/A"}
+                              </span>
+                            </p>
+
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">Allocated</span>
+                              <span className="font-medium text-sky-300">
+                                ₹{station.totalAllocated}
+                              </span>
+                            </div>
+
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">Utilized</span>
+                              <span className="font-medium text-emerald-300">
+                                ₹{station.totalUtilized}
+                              </span>
+                            </div>
+
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">Estimated</span>
+                              <span className="font-medium text-violet-300">
+                                ₹{station.totalEstimated}
+                              </span>
+                            </div>
+
+                            <p className="pt-1 text-[11px] text-sky-200">
+                              Remark:{" "}
+                              <span className="font-medium text-slate-100">
+                                {station.remark}
+                              </span>
+                            </p>
+
+                            {/* Receipts */}
+                            <p className="text-[11px] text-indigo-200/90 flex items-start justify-between gap-2">
+                              <span>
+                                Receipts:{" "}
+                                <span className="font-medium text-slate-100">
+                                  {station.receipts?.length > 0
+                                    ? `Available (${station.receipts.length})`
+                                    : "Not Uploaded"}
+                                </span>
+                              </span>
+
+                              {station.receipts?.length > 0 && (
+                                <button
+                                  onClick={() => {
+                                    setReceiptList(station.receipts);
+                                    setViewReceiptIndex(0);
+                                  }}
+                                  className="rounded-full bg-indigo-500/20 px-3 py-1 text-[10px] font-semibold text-indigo-200 border border-indigo-400/30 hover:bg-indigo-500/30 transition"
+                                >
+                                  View
+                                </button>
+                              )}
+                            </p>
+
+                            <p className="pt-1 text-[11px] text-amber-200 leading-relaxed">
+                              Description:{" "}
+                              <span className="font-medium text-slate-100">
+                                {station.description || "N/A"}
+                              </span>
+                            </p>
+                          </>
+                        ) : (
+                          <p className="py-3 text-center text-[11px] text-rose-300">
+                            ❌ Budget not present for {formatFY(selectedFY)}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Edit Button */}
+                      <button
+                        onClick={() => {
+                          setEditStation(station);
+                          setEditForm({
+                            totalAllocated: hasBudget ? station.totalAllocated : "",
+                            totalUtilized: hasBudget ? station.totalUtilized : "",
+                            totalEstimated: hasBudget ? station.totalEstimated : "",
+                            remark: station.remark || "N/A",
+                            description: station.description || "",
+                            receipt: station.receipt || "",
+                            allocationType: station.allocationType || ""
+                          });
+                          setOpenEditModal(true);
+                        }}
+                        className="relative mt-auto inline-flex w-full items-center justify-center rounded-2xl 
+                bg-white/10 px-3.5 py-2.5 text-xs font-semibold text-slate-50 
+                border border-white/20 hover:bg-white/20 hover:border-sky-300/60 transition"
+                      >
+                        {hasBudget ? "Edit Budget" : "Add Budget"}
+                      </button>
+
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ============================================================= */}
+        {/* ====================== TABLE VIEW =========================== */}
+        {/* ============================================================= */}
+
+        {viewMode === "table" && (
+          <div
+            className="
+      overflow-x-auto 
+      rounded-2xl 
+      border border-white/10 
+      bg-slate-900/40 
+      backdrop-blur-xl 
+      shadow-[0_8px_30px_rgba(0,0,0,0.45)]
+      mt-4
+    "
+          >
+
+            {/* MOBILE-ONLY HEADER BADGE */}
+            <div className="sm:hidden px-4 py-2 text-[11px] text-slate-300 bg-white/5 border-b border-white/10">
+              Swipe → to view full table
+            </div>
+
+            <table
+              className="
+        w-full 
+        min-w-[850px] 
+        text-slate-200 
+        text-xs sm:text-sm
+        border-collapse
+      "
+            >
+              {/* ===================== HEADER ===================== */}
+              <thead
+                className="
+          bg-white/10 
+          text-[10px] sm:text-xs 
+          uppercase 
+          tracking-wide 
+          text-slate-300
+        "
+              >
+                <tr>
+                  <th className="px-3 sm:px-5 py-3 text-left">Station</th>
+                  <th className="px-3 sm:px-5 py-3 text-left">Allocated</th>
+                  <th className="px-3 sm:px-5 py-3 text-left">Utilized</th>
+                  <th className="px-3 sm:px-5 py-3 text-left">Estimated</th>
+
+                  {/* NEW COLUMN → ALLOCATION TYPE */}
+                  <th className="px-3 sm:px-5 py-3 text-left">Allocation Type</th>
+
+                  <th className="px-3 sm:px-5 py-3 text-left">Receipts</th>
+                  <th className="px-3 sm:px-5 py-3 text-left">Action</th>
+                </tr>
+              </thead>
+
+              {/* ===================== BODY ===================== */}
+              <tbody>
+                {stations.map((s) => (
+                  <tr
+                    key={s._id}
+                    className="
+              border-t border-white/10 
+              hover:bg-white/10 
+              transition 
+              duration-200
+            "
+                  >
+                    {/* STATION INFO */}
+                    <td className="px-3 sm:px-5 py-3">
+                      <p className="font-semibold text-[11px] sm:text-sm text-white leading-tight">
+                        {s.stationName}
+                      </p>
+                      <p className="text-[10px] text-slate-400">{s.stationCode}</p>
+                      <p className="hidden sm:block text-[11px] text-slate-500">
+                        {s.email}
+                      </p>
+                    </td>
+
+                    {/* ALLOCATED */}
+                    <td className="px-3 sm:px-5 py-3 text-sky-300 font-medium whitespace-nowrap">
+                      ₹{s.totalAllocated?.toLocaleString("en-IN") || 0}
+                    </td>
+
+                    {/* UTILIZED */}
+                    <td className="px-3 sm:px-5 py-3 text-emerald-300 font-medium whitespace-nowrap">
+                      ₹{s.totalUtilized?.toLocaleString("en-IN") || 0}
+                    </td>
+
+                    {/* ESTIMATED */}
+                    <td className="px-3 sm:px-5 py-3 text-violet-300 font-medium whitespace-nowrap">
+                      ₹{s.totalEstimated?.toLocaleString("en-IN") || 0}
+                    </td>
+
+                    {/* NEW → ALLOCATION TYPE */}
+                    <td className="px-3 sm:px-5 py-3 text-amber-300 font-medium whitespace-nowrap">
+                      {s.allocationType || "N/A"}
+                    </td>
+
+                    {/* RECEIPTS */}
+                    <td className="px-3 sm:px-5 py-3 whitespace-nowrap">
+                      {s.receipts?.length > 0 ? (
+                        <button
+                          onClick={() => {
+                            setReceiptList(s.receipts);
+                            setViewReceiptIndex(0);
+                          }}
+                          className="
+                    text-sky-300 
+                    underline 
+                    text-[10px] sm:text-xs
+                    hover:text-sky-400
+                  "
+                        >
+                          View ({s.receipts.length})
+                        </button>
+                      ) : (
+                        <span className="text-slate-500 text-[10px]">None</span>
+                      )}
+                    </td>
+
+                    {/* EDIT BUTTON */}
+                    <td className="px-3 sm:px-5 py-3">
+                      <button
+                        onClick={() => {
+                          setEditStation(s);
+                          setEditForm({
+                            totalAllocated: s.totalAllocated || "",
+                            totalUtilized: s.totalUtilized || "",
+                            totalEstimated: s.totalEstimated || "",
+                            remark: s.remark || "",
+                            description: s.description || "",
+                            receipt: s.receipt || "",
+                            allocationType: s.allocationType || "",
+                          });
+                          setOpenEditModal(true);
+                        }}
+                        className="
+                  text-[10px] sm:text-xs 
+                  px-3 py-1.5 
+                  rounded-lg 
+                  bg-white/10 
+                  border border-white/20
+                  hover:bg-white/20 
+                  hover:border-sky-300/50
+                  transition-all
+                  whitespace-nowrap
+                "
+                      >
+                        Edit
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
+
+
+
+
+
+
 
         {/* ✅ CREATE STATION MODAL */}
         {openModal && (
