@@ -113,5 +113,4 @@ http://localhost:3001
 
 ---
 
-## 📜 License
-Educational & internal use only.
+
