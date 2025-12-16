@@ -5,7 +5,7 @@ export const isStation = async (req, res, next) => {
     try {
         const token = req.cookies?.accessToken;
 
-        console.log("Station middleware -> ", token);
+       
 
 
         if (!token) {
@@ -20,7 +20,7 @@ export const isStation = async (req, res, next) => {
             return res.status(401).json({ message: "Station not found" });
         }
 
-        req.station = station; // ✅ REQUIRED for logout
+        req.station = station; 
         next();
 
     } catch (err) {

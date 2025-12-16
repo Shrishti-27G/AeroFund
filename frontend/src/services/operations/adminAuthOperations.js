@@ -6,6 +6,8 @@ import { setAdmin } from "../../redux/slices/adminAuthSlice.js";
 const { Login_Admin_API, Signup_Admin_API, Logout_Admin_API } = authEnpoint;
 
 export const loginAdmin = (email, password, navigate) => async (dispatch) => {
+    const toastId = toast.loading("Signing in...");
+
     try {
         const response = await apiConnector(
             "POST",
@@ -13,28 +15,37 @@ export const loginAdmin = (email, password, navigate) => async (dispatch) => {
             { email, password }
         );
 
-        if (!response.data) {
-            toast.error("Login failed");
+        if (!response?.data?.supervisor) {
+            toast.error("Login failed", { id: toastId });
             return null;
         }
 
-        console.log("data -> ", response);
-
-        // toast.success("Login successful");
         dispatch(setAdmin(response.data.supervisor));
-        navigate("/stations")
-        return response.data.supervisor || response.data;
+
+        toast.success(
+            `Welcome back, ${response.data.supervisor.name}`,
+            { id: toastId }
+        );
+
+        navigate("/stations");
+
+        return response.data.supervisor;
+
     } catch (error) {
-        console.log("LOGIN ERROR →", error);
-        const msg = error?.response?.data?.message || "Server Error";
-        // toast.error(msg);
+
+        const msg =
+            error?.response?.data?.message ||
+            "Invalid email or password";
+
+        toast.error(msg, { id: toastId });
         return null;
     }
 };
 
 
-
 export const signupAdmin = async (name, email, password, phone) => {
+    const toastId = toast.loading("Creating your account...");
+
     try {
         const response = await apiConnector(
             "POST",
@@ -42,17 +53,25 @@ export const signupAdmin = async (name, email, password, phone) => {
             { name, email, password, phone }
         );
 
-        if (!response.data) {
-            // toast.error("Signup failed");
+        if (!response?.data?.supervisor) {
+            toast.error("Signup failed", { id: toastId });
             return null;
         }
 
-        // toast.success("Account created successfully!");
-        return response.data.supervisor || response.data;
+        toast.success(
+            "Account created successfully! Please login.",
+            { id: toastId }
+        );
+
+        return response.data.supervisor;
+
     } catch (error) {
-        console.log("SIGNUP ERROR →", error);
-        const msg = error?.response?.data?.message || "Server Error";
-        // toast.error(msg);
+
+        const msg =
+            error?.response?.data?.message ||
+            "Server error during signup";
+
+        toast.error(msg, { id: toastId });
         return null;
     }
 };
@@ -60,31 +79,28 @@ export const signupAdmin = async (name, email, password, phone) => {
 
 
 export const logoutAdmin = (navigate) => async (dispatch) => {
+    const toastId = toast.loading("Logging out...");
 
-    console.log("logout");
-    
     try {
         const response = await apiConnector(
             "POST",
             Logout_Admin_API,
             null,
-            { withCredentials: true } // ✅ COOKIE REQUIRED
+            { withCredentials: true }
         );
 
         if (!response?.data?.success) {
-            toast.error("Logout failed");
+            toast.error("Logout failed", { id: toastId });
             return;
         }
 
-        // ✅ CLEAR REDUX STATE
         dispatch(setAdmin(null));
 
-        toast.success("Logged out successfully");
+        toast.success("Logged out successfully", { id: toastId });
 
-        // ✅ REDIRECT TO LANDING
         navigate("/");
 
     } catch (error) {
-        toast.error("Logout failed");
+        toast.error("Logout failed", { id: toastId });
     }
 };

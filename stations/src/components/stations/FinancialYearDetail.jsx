@@ -2,11 +2,11 @@ import React from "react";
 
 const formatFY = (year) => `${year}-${year + 1}`;
 
-// ✅ Format number in Indian comma system
+
 const formatINR = (num) => {
   if (num === null || num === undefined) return "0";
 
-  // Prevent formatting extremely huge numbers incorrectly
+  
   if (num > 1e15) return num.toExponential(2);
 
   return Number(num).toLocaleString("en-IN");
@@ -106,7 +106,7 @@ const FinancialYearDetail = ({ yearData, selectedFY }) => {
               <td className="px-4 py-3 text-right">{yearData.remark}</td>
             </tr>
             
-            {/* ⭐ NEW ROW — ALLOCATION TYPE */}
+            {/* NEW ROW — ALLOCATION TYPE */}
             <tr className="border-b border-white/10">
               <td className="px-4 py-3 font-medium text-slate-300">
                 Allocation Type

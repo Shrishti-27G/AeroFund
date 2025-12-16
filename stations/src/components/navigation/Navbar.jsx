@@ -8,7 +8,6 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useSelector((state) => state.auth);
 
-  console.log("USer in nav", user);
 
 
   const dispatch = useDispatch();
@@ -24,12 +23,12 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex justify-between items-center h-16">
 
-          {/* ✅ Logo */}
+          
           <Link to="/" className="text-4xl font-bold text-blue-600">
             Aero Fund
           </Link>
 
-          {/* ✅ Desktop Menu */}
+          {/*  Desktop Menu */}
           {user && (
             <div className="hidden md:flex items-center space-x-8 font-medium">
               <Link
@@ -48,7 +47,7 @@ const Navbar = () => {
             </div>
           )}
 
-          {/* ✅ Mobile Hamburger */}
+          {/*  Mobile Hamburger */}
           {user && (
             <div className="md:hidden">
               <button
@@ -74,7 +73,7 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* ✅ Mobile Menu */}
+      {/*  Mobile Menu */}
       {user && isOpen && (
         <div className="md:hidden bg-[#050A13] shadow-lg">
           <div className="flex flex-col space-y-4 px-6 py-4 font-medium">

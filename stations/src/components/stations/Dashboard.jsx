@@ -95,7 +95,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* ================= STATION INFO ================= */}
+      {/*  STATION INFO  */}
       <div className="grid md:grid-cols-2 gap-6 mb-10">
 
         <div className="rounded-3xl p-6 bg-white/10 border border-white/20">
@@ -142,7 +142,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* ===================== DETAILS ===================== */}
+      {/*  DETAILS  */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
 
         {/* LEFT TITLE */}
@@ -209,9 +209,7 @@ const Dashboard = () => {
         <p className="text-red-300">No details</p>
       )}
 
-      {/* ===================================================== */}
       {/*                     EDIT REMARK MODAL                 */}
-      {/* ===================================================== */}
 
       {openRemarkModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50">
@@ -260,9 +258,7 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* ===================================================== */}
       {/*                     RECEIPT VIEWER                   */}
-      {/* ===================================================== */}
 
       {receiptList.length > 0 && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center z-50">

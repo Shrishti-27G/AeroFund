@@ -32,7 +32,7 @@ const DeleteStationModal = ({
           shadow-[0_30px_90px_rgba(15,23,42,0.85)]
         "
       >
-        {/* ✨ SOFT GLASS GLOW */}
+      
         <div
           className="
             pointer-events-none

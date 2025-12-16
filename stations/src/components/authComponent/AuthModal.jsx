@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+
 import LoginForm from "./LoginForm";
 
 const AuthModal = ({ showModal, setShowModal }) => {
@@ -21,15 +21,15 @@ const AuthModal = ({ showModal, setShowModal }) => {
             exit={{ scale: 0.7, opacity: 0 }}
             transition={{ duration: 0.4 }}
           >
-            {/* ✅ TITLE */}
+           
             <h2 className="text-2xl font-bold text-center mb-6 text-white">
               Login
             </h2>
 
-            {/* ✅ ONLY LOGIN FORM */}
+          
             <LoginForm closeModal={closeModal} />
 
-            {/* ✅ CLOSE BUTTON */}
+           
             <button
               className="absolute top-3 right-4 text-xl text-blue-200 hover:text-white transition"
               onClick={closeModal}

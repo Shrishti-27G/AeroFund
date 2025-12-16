@@ -2,6 +2,27 @@ import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+
+const supervisorYearlyBudgetSchema = new Schema(
+  {
+    year: {
+      type: Number,
+      required: true,
+    },
+
+    totalAllocatedToMe: {
+      type: Number,
+      default: 0,
+    },
+
+
+  },
+  { _id: false }
+);
+
+
+
+
 const supervisorSchema = new Schema(
   {
     name: {
@@ -33,6 +54,7 @@ const supervisorSchema = new Schema(
       ref: "Station",
     },
 
+    yearlyBudgets: [supervisorYearlyBudgetSchema],
 
     createdStations: [
       {

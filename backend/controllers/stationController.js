@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import { Supervisor } from "../models/supervisorModel.js";
 
 
-//  asmin controller
+//  admin controller
 export const updateYearlyBudget = async (req, res) => {
   try {
     const supervisorId = req.admin._id;
@@ -19,7 +19,7 @@ export const updateYearlyBudget = async (req, res) => {
       allocationType,
     } = req.body;
 
-    // ✅ BASIC VALIDATION
+    
     if (!stationId || !year) {
       return res.status(400).json({
         message: "Station ID and Year are required",
@@ -39,10 +39,10 @@ export const updateYearlyBudget = async (req, res) => {
       });
     }
 
-    // ✅ FIND STATION (SECURE: ONLY OWNER SUPERVISOR)
+    
     const station = await Station.findOne({
       _id: stationId,
-      createdBy: supervisorId, // 🔐 SECURITY
+      createdBy: supervisorId, 
     });
 
     if (!station) {
@@ -51,7 +51,7 @@ export const updateYearlyBudget = async (req, res) => {
       });
     }
 
-    // ✅ HANDLE RECEIPT IMAGE UPLOAD
+    
     let receiptUrl = null;
 
     if (req.files?.receipt) {
@@ -62,14 +62,12 @@ export const updateYearlyBudget = async (req, res) => {
       receiptUrl = uploadResult.secure_url;
     }
 
-    // ✅ FIND YEAR RECORD
+  
     let yearlyRecord = station.yearlyData.find(
       (item) => item.year === parsedYear
     );
 
-    // =====================================================
-    // 🆕 CREATE YEAR IF NOT EXISTS
-    // =====================================================
+  
     if (!yearlyRecord) {
       const newYearRecord = {
         year: parsedYear,
@@ -92,9 +90,7 @@ export const updateYearlyBudget = async (req, res) => {
       });
     }
 
-    // =====================================================
-    // 🔁 UPDATE EXISTING YEAR
-    // =====================================================
+   
     if (totalAllocated !== undefined)
       yearlyRecord.totalAllocated = Number(totalAllocated);
 
@@ -113,7 +109,7 @@ export const updateYearlyBudget = async (req, res) => {
     if (allocationType !== undefined)
       yearlyRecord.allocationType = allocationType;
 
-    // ✅ APPEND RECEIPT (DO NOT REPLACE)
+  
     if (receiptUrl) {
       yearlyRecord.receipts ??= [];
       yearlyRecord.receipts.push(receiptUrl);
@@ -137,6 +133,131 @@ export const updateYearlyBudget = async (req, res) => {
 };
 
 
+export const updateSupervisorYearlyBudget = async (req, res) => {
+  try {
+    
+
+    const { year, totalAllocatedToMe } = req.body;
+
+    if (!req.admin) {
+      return res.status(401).json({
+        success: false,
+        message: "Admin not authenticated",
+      });
+    }
+
+    const supervisorId = req.admin._id;
+
+  
+    if (!year || totalAllocatedToMe === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: "Year and totalAllocatedToMe are required",
+      });
+    }
+
+    if (Number(totalAllocatedToMe) < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Budget cannot be negative",
+      });
+    }
+
+    const supervisor = await Supervisor.findById(supervisorId);
+
+    if (!supervisor) {
+      return res.status(404).json({
+        success: false,
+        message: "Supervisor not found",
+      });
+    }
+
+    const numericYear = Number(year);
+    const numericBudget = Number(totalAllocatedToMe);
+
+    const yearIndex = supervisor.yearlyBudgets.findIndex(
+      (b) => b.year === numericYear
+    );
+
+    if (yearIndex !== -1) {
+      supervisor.yearlyBudgets[yearIndex] = {
+        year: numericYear,
+        totalAllocatedToMe: numericBudget,
+      };
+    } else {
+      supervisor.yearlyBudgets.push({
+        year: numericYear,
+        totalAllocatedToMe: numericBudget,
+      });
+    }
+
+
+    supervisor.markModified("yearlyBudgets");
+
+    await supervisor.save();
+
+   
+
+    return res.status(200).json({
+      success: true,
+      message: "Yearly budget updated successfully",
+      yearlyBudgets: supervisor.yearlyBudgets,
+    });
+  } catch (error) {
+    console.error("Update Supervisor Budget Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+
+
+export const getSupervisorYearlyBudget = async (req, res) => {
+  try {
+    const supervisorId = req.admin._id; 
+    const { year } = req.params;
+
+
+    if (!year) {
+      return res.status(400).json({
+        success: false,
+        message: "Year is required",
+      });
+    }
+
+    const supervisor = await Supervisor.findById(supervisorId).select(
+      "yearlyBudgets"
+    );
+
+    if (!supervisor) {
+      return res.status(404).json({
+        success: false,
+        message: "Supervisor not found",
+      });
+    }
+
+    const numericYear = Number(year);
+
+    const budgetForYear = supervisor.yearlyBudgets.find(
+      (b) => b.year === numericYear
+    );
+
+    return res.status(200).json({
+      success: true,
+      budget: budgetForYear || null,
+    });
+  } catch (error) {
+    console.error("Get Supervisor Budget By Year Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+
 
 
 export const getAllStations = async (req, res) => {
@@ -144,18 +265,18 @@ export const getAllStations = async (req, res) => {
     const { year } = req.query;
     const filterYear = year ? Number(year) : null;
 
-    const supervisorId = req.admin._id; // ✅ logged-in supervisor
+    const supervisorId = req.admin._id;
 
     const pipeline = [];
 
-    // ✅ ONLY STATIONS CREATED BY THIS SUPERVISOR
+   
     pipeline.push({
       $match: {
         createdBy: new mongoose.Types.ObjectId(supervisorId),
       },
     });
 
-    // ✅ IF YEAR PROVIDED
+   
     if (filterYear) {
       pipeline.push({
         $addFields: {
@@ -170,13 +291,13 @@ export const getAllStations = async (req, res) => {
       });
     }
 
-    // ✅ IF NO YEAR → LATEST YEAR
+  
     if (!filterYear) {
       pipeline.push({ $unwind: "$yearlyData" });
       pipeline.push({ $sort: { "yearlyData.year": -1 } });
     }
 
-    // ✅ PROJECT FINAL SHAPE
+   
     pipeline.push({
       $project: {
         stationName: 1,
@@ -255,6 +376,16 @@ export const getAllStations = async (req, res) => {
 
     const stations = await Station.aggregate(pipeline);
 
+   
+    if (!stations || stations.length === 0) {
+      return res.status(200).json({
+        success: true,
+        count: 0,
+        stations: [],
+        message: "You don't have any stations yet. Please create one.",
+      });
+    }
+
     res.status(200).json({
       success: true,
       count: stations.length,
@@ -268,6 +399,7 @@ export const getAllStations = async (req, res) => {
     });
   }
 };
+
 
 
 
@@ -293,7 +425,7 @@ export const deleteStation = async (req, res) => {
       });
     }
 
-    // 🔥 DELETE ALL RECEIPTS FROM CLOUDINARY
+    
     for (const year of station.yearlyData) {
       if (Array.isArray(year.receipts)) {
         for (const receiptUrl of year.receipts) {
@@ -302,10 +434,10 @@ export const deleteStation = async (req, res) => {
       }
     }
 
-    // 🗑 DELETE STATION
+ 
     await Station.findByIdAndDelete(stationId);
 
-    // 🧹 REMOVE FROM SUPERVISOR
+  
     await Supervisor.findByIdAndUpdate(supervisorId, {
       $pull: { createdStations: stationId },
     });
@@ -361,14 +493,14 @@ export const deleteFinancialYear = async (req, res) => {
       });
     }
 
-    // 🔥 DELETE RECEIPTS FROM CLOUDINARY
+    
     if (Array.isArray(yearData.receipts)) {
       for (const receiptUrl of yearData.receipts) {
         await deleteFromCloudinaryByUrl(receiptUrl);
       }
     }
 
-    // 🗑 REMOVE FINANCIAL YEAR
+
     station.yearlyData = station.yearlyData.filter(
       (y) => y.year !== parsedYear
     );
@@ -399,7 +531,7 @@ export const getStationByFinancialYear = async (req, res) => {
     const { stationId } = req.params;
     let { year } = req.params;
 
-    // ✅ VALIDATE STATION ID
+   
     if (!mongoose.Types.ObjectId.isValid(stationId)) {
       return res.status(400).json({
         success: false,
@@ -407,7 +539,7 @@ export const getStationByFinancialYear = async (req, res) => {
       });
     }
 
-    // 👉 Auto-detect current FY if not passed
+  
     if (!year) {
       const today = new Date();
       const yr = today.getFullYear();
@@ -432,7 +564,7 @@ export const getStationByFinancialYear = async (req, res) => {
         stationName: 1,
         stationCode: 1,
         email: 1,
-        "yearlyData.$": 1, // ✅ ONLY MATCHED FY
+        "yearlyData.$": 1, 
       }
     );
 
@@ -471,7 +603,7 @@ export const updateRemark = async (req, res) => {
       });
     }
 
-    // ✅ VALIDATE STATION ID
+   
     if (!mongoose.Types.ObjectId.isValid(stationId)) {
       return res.status(400).json({
         success: false,

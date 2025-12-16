@@ -21,7 +21,7 @@ const Landing = () => {
   return (
     <section className="relative w-full h-screen bg-[#020B16] overflow-hidden flex justify-center items-center">
 
-      {/* 🌊 Floating Glass Bubbles */}
+     
       {bubbles.map((b, i) => (
         <motion.div
           key={i}
@@ -41,7 +41,7 @@ const Landing = () => {
         />
       ))}
 
-      {/* ✈️ Plane Takeoff Smooth Motion */}
+   
       <motion.div
         className="absolute pointer-events-none opacity-90"
         initial={{ x: "-35%", y: "45%" }}
@@ -83,7 +83,7 @@ const Landing = () => {
           transition={{ delay: 1.5, duration: 0.6 }}
         >
           <Link
-            to={user ? "/dashboard" : "/home"} // ✅ USER LOGGED IN → STATIONS
+            to={user ? "/dashboard" : "/home"} 
             className="inline-block mt-10 px-14 py-4 rounded-full font-semibold
   bg-gradient-to-r from-[#007AFF] to-[#00CFFF] text-white text-lg
   hover:scale-[1.10] hover:shadow-[0_0_50px_#00CFFF90] 
@@ -95,7 +95,7 @@ const Landing = () => {
         </motion.div>
       </div>
 
-      {/* Subtle Glow */}
+   
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,135,255,0.18),transparent_75%)] pointer-events-none"></div>
     </section>
   );

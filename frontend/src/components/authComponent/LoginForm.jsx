@@ -2,6 +2,7 @@ import { useState } from "react";
 import { loginAdmin } from "../../services/operations/adminAuthOperations";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 
 const LoginForm = ({ switchToRegister, closeModal }) => {
     const [email, setEmail] = useState("");
@@ -17,7 +18,7 @@ const LoginForm = ({ switchToRegister, closeModal }) => {
         const user = await dispatch(loginAdmin(email, password, navigate));
 
         if (user) {
-            console.log("Logged in user:", user);
+           
             closeModal();
         }
     };
@@ -49,7 +50,12 @@ const LoginForm = ({ switchToRegister, closeModal }) => {
                     className="absolute right-3 top-5 -translate-y-1/2 cursor-pointer text-black text-2xl"
                     onClick={() => setShowPassword(!showPassword)}
                 >
-                    {showPassword ? "🙈" : "👁️"}
+                    <span
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3  -translate-y-1/2 cursor-pointer text-gray-700 text-xl"
+                    >
+                        {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
+                    </span>
                 </span>
 
             </div>
@@ -62,7 +68,25 @@ const LoginForm = ({ switchToRegister, closeModal }) => {
                 className="mt-4 text-center text-blue-200 cursor-pointer"
                 onClick={switchToRegister}
             >
-                New user? Register here
+                New user?
+                <span className="relative font-semibold ml-2 text-red-400">
+                    Register
+                    <span
+                        className="
+    absolute
+    -right-2
+    top-1/2
+    -translate-y-1/2
+    h-1.5
+    w-1.5
+    bg-red-400
+    rounded-full
+    animate-bounce
+    shadow-[0_0_8px_rgba(248,113,113,0.8)]
+  "
+                    />
+
+                </span>
             </p>
         </form>
     );

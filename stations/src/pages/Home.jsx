@@ -8,7 +8,7 @@ const Home = () => {
   return (
     <section className="relative w-full min-h-screen bg-[#050A13] text-white flex items-center justify-center overflow-hidden">
 
-      {/* ✅ PERFORMANCE OPTIMIZED MOTION WRAPPER */}
+   
       <motion.div
         className="z-10 text-center px-6 max-w-xl will-change-transform"
         initial={{ opacity: 0, y: 20, scale: 0.96 }}
@@ -18,7 +18,7 @@ const Home = () => {
           ease: "easeOut",
         }}
       >
-        {/* ✅ Smooth Text Animation */}
+       
         <motion.h1
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -28,7 +28,7 @@ const Home = () => {
           AeroFund Portal
         </motion.h1>
 
-        {/* ✅ Button Fade + Scale (No Jank) */}
+       
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -45,7 +45,7 @@ const Home = () => {
         </motion.div>
       </motion.div>
 
-      {/* ✅ AUTH MODAL (NO RE-RENDER LAG) */}
+      
       <AuthModal showModal={showModal} setShowModal={setShowModal} />
 
     </section>

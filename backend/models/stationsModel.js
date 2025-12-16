@@ -2,7 +2,6 @@ import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-// ✅ Year-wise budget schema
 const yearlyBudgetSchema = new Schema(
   {
     year: {
@@ -43,12 +42,12 @@ const yearlyBudgetSchema = new Schema(
     description: {
       type: String,
       trim: true,
-      default: "", // Optional by default
-      maxlength: 500, // ✅ Optional safety limit
+      default: "", 
+      maxlength: 500, 
     },
 
   },
-  { _id: false } // ✅ Prevent separate _id for yearly objects
+  { _id: false } 
 );
 
 const stationSchema = new Schema(
@@ -94,24 +93,24 @@ const stationSchema = new Schema(
       required: true,
     },
 
-    // ✅ ✅ YEAR-WISE STORAGE
+    
     yearlyData: [yearlyBudgetSchema],
   },
   { timestamps: true }
 );
 
-// ✅ PASSWORD HASHING
+
 stationSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
   this.password = await bcrypt.hash(this.password, 10);
 });
 
-// ✅ COMPARE PASSWORD
+
 stationSchema.methods.isPasswordCorrect = function (password) {
   return bcrypt.compare(password, this.password);
 };
 
-// ✅ ACCESS TOKEN
+
 stationSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
@@ -124,7 +123,7 @@ stationSchema.methods.generateAccessToken = function () {
   );
 };
 
-// ✅ REFRESH TOKEN
+
 stationSchema.methods.generateRefreshToken = function () {
   return jwt.sign(
     { _id: this._id },

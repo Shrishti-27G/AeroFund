@@ -3,10 +3,10 @@ import { Supervisor } from "../models/supervisorModel.js";
 
 export const isAdmin = async (req, res, next) => {
   try {
-    // ✅ TOKEN FROM COOKIE
+    
     const token = req.cookies?.accessToken;
 
-    console.log("Tokens -> in middleware ",token);
+
     
 
     if (!token) {
@@ -16,10 +16,10 @@ export const isAdmin = async (req, res, next) => {
       });
     }
 
-    // ✅ VERIFY TOKEN
+  
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
-    // ✅ FIND ADMIN FROM DB
+   
     const admin = await Supervisor.findById(decoded._id).select(
       "-password -refreshToken"
     );
@@ -31,7 +31,7 @@ export const isAdmin = async (req, res, next) => {
       });
     }
 
-    // ✅ CHECK ROLE
+   
     if (admin.role !== "admin") {
       return res.status(403).json({
         success: false,
@@ -39,7 +39,7 @@ export const isAdmin = async (req, res, next) => {
       });
     }
 
-    // ✅ CHECK ACTIVE STATUS
+ 
     if (!admin.isActive) {
       return res.status(403).json({
         success: false,
@@ -47,10 +47,10 @@ export const isAdmin = async (req, res, next) => {
       });
     }
 
-    // ✅ ATTACH ADMIN TO REQUEST
+
     req.admin = admin;
 
-    next(); // ✅ ACCESS GRANTED
+    next(); 
   } catch (error) {
     console.error("Admin Cookie Auth Error:", error);
 

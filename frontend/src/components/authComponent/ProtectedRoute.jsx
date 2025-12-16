@@ -6,7 +6,7 @@ const ProtectedRoute = ({ children }) => {
 
     const { user } = useSelector((state) => state.auth);
 
-    console.log("User in protected route-> ", user);
+   
 
     if (user !== null) {
         return children

@@ -21,7 +21,6 @@ const Landing = () => {
   return (
     <section className="relative w-full h-screen bg-[#020B16] overflow-hidden flex justify-center items-center">
 
-      {/* 🌊 Floating Glass Bubbles */}
       {bubbles.map((b, i) => (
         <motion.div
           key={i}
@@ -41,7 +40,6 @@ const Landing = () => {
         />
       ))}
 
-      {/* ✈️ Plane Takeoff Smooth Motion */}
       <motion.div
         className="absolute pointer-events-none opacity-90"
         initial={{ x: "-35%", y: "45%" }}
@@ -95,7 +93,7 @@ const Landing = () => {
         </motion.div>
       </div>
 
-      {/* Subtle Glow */}
+     
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,135,255,0.18),transparent_75%)] pointer-events-none"></div>
     </section>
   );

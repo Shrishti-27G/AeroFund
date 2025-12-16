@@ -6,7 +6,7 @@ import {
   refreshStationAccessToken
 } from "../controllers/stationAuthController.js";
 
-import { getAllStations, updateYearlyBudget, getStationByFinancialYear, updateRemark, deleteStation, deleteFinancialYear } from "../controllers/stationController.js";
+import { getAllStations, updateYearlyBudget, getStationByFinancialYear, updateRemark, deleteStation, deleteFinancialYear, updateSupervisorYearlyBudget, getSupervisorYearlyBudget } from "../controllers/stationController.js";
 
 import { isAdmin } from "../middlewares/isAdmin.js";
 import { isStation } from "../middlewares/isStation.js";
@@ -42,5 +42,15 @@ router.delete(
   isAdmin,
   deleteFinancialYear
 );
+router.get(
+  "/get-admin-yearly-budget/:year",
+  isAdmin,
+  getSupervisorYearlyBudget
+);
 
+router.put(
+  "/update-admin-yearly-budget",
+  isAdmin,
+  updateSupervisorYearlyBudget
+);
 export default router;

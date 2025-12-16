@@ -15,7 +15,7 @@ import { deleteStation, deleteFinancialYear } from "../../services/operations/st
 
 
 
-/* ✅ RETURN NUMBER YEAR */
+
 const getCurrentFinancialYear = () => {
   const today = new Date();
   const year = today.getFullYear();
@@ -23,8 +23,18 @@ const getCurrentFinancialYear = () => {
   return month >= 4 ? year : year - 1;
 };
 
-/* ✅ FORMAT FOR UI */
+
 const formatFY = (year) => `${year}-${year + 1}`;
+
+
+const START_FY = 2023;
+const CURRENT_FY = getCurrentFinancialYear();
+
+const financialYears = Array.from(
+  { length: CURRENT_FY - START_FY + 1 },
+  (_, i) => START_FY + i
+).reverse();
+
 
 const Stations = () => {
   const dispatch = useDispatch();
@@ -39,12 +49,14 @@ const Stations = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [viewMode, setViewMode] = useState("table");
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const [expandedDesc, setExpandedDesc] = useState(null);
 
 
 
 
 
-  // Automatically force card view below 1050px
+
+
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth <= 1100) {
@@ -52,7 +64,7 @@ const Stations = () => {
       }
     };
 
-    handleResize(); // Run initially
+    handleResize();
 
 
     window.addEventListener("resize", handleResize);
@@ -63,11 +75,10 @@ const Stations = () => {
   const handleDeleteStation = async (stationId) => {
     const success = await dispatch(deleteStation(stationId));
 
-    console.log("success -> ", success);
 
     if (success) {
-      await fetchStations();      // ✅ refetch latest data
-      setOpenDeleteModal(false);  // ✅ close modal
+      await fetchStations();
+      setOpenDeleteModal(false);
 
     }
   };
@@ -76,10 +87,9 @@ const Stations = () => {
   const handleDeleteYear = async (stationId, year) => {
     const success = await dispatch(deleteFinancialYear(stationId, year));
 
-    console.log("success -> ", success);
 
     if (success) {
-      await fetchStations();      // ✅ refetch latest data
+      await fetchStations();
       setOpenDeleteModal(false);
 
     }
@@ -89,7 +99,7 @@ const Stations = () => {
 
 
 
-  /* ✅ DEFAULT LATEST FY ON LOAD */
+
   const [selectedFY, setSelectedFY] = useState(getCurrentFinancialYear());
 
   const [formData, setFormData] = useState({
@@ -106,12 +116,18 @@ const Stations = () => {
     totalEstimated: "",
     remark: "",
     receipt: "",
-    description: "",   // ✅ ADD THIS
+    description: "",
   });
 
   const [loading, setLoading] = useState(false);
+  const [adminYearlyBudget, setAdminYearlyBudget] = useState(0);
+  const [utilizedError, setUtilizedError] = useState("");
 
-  /* ✅ FETCH ON FIRST LOAD + FY CHANGE */
+
+
+
+
+
   useEffect(() => {
     fetchStations();
   }, [selectedFY]);
@@ -123,7 +139,7 @@ const Stations = () => {
 
     const yearLabel = `${selectedFY}-${selectedFY + 1}`;
 
-    // ✅ CALCULATE TOTALS
+
     const totalAllocated = stations.reduce(
       (sum, s) => sum + Number(s.totalAllocated || 0),
       0
@@ -139,12 +155,13 @@ const Stations = () => {
       0
     );
 
+    const totalRemaining = adminYearlyBudget - totalAllocated
+
     const utilizationPercent =
       totalAllocated > 0
         ? ((totalUtilized / totalAllocated) * 100).toFixed(1)
         : 0;
 
-    // ✅ TITLE (SMALLER FONT)
     doc.setFontSize(11);
     doc.text(
       `Budget Utilization Summary Report : ${yearLabel}`,
@@ -152,9 +169,32 @@ const Stations = () => {
       12
     );
 
-    // ✅ SUMMARY BOX (LIKE YOUR IMAGE)
+    const now = new Date();
+
+    doc.setFontSize(9);
+    doc.setTextColor(180, 83, 9);
+    doc.setFont("helvetica", "bold");
+
+    doc.text(
+      `Till ${now.toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })}`,
+      14,
+      16
+    );
+
+
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "normal");
+
+
     autoTable(doc, {
-      startY: 16,
+      startY: 20,
       theme: "grid",
       styles: { fontSize: 8, cellPadding: 2 },
       columnStyles: {
@@ -162,13 +202,15 @@ const Stations = () => {
         1: { cellWidth: 40 },
       },
       body: [
+        ["Total Budget Allocated to You", adminYearlyBudget],
         ["Total Budget Allocated to Stations", totalAllocated],
-        ["Total Budget Utilized till date", totalUtilized],
-        ["% Budget Utilization till date", `${utilizationPercent}%`],
+        ["Total Budget Utilized by Stations", totalUtilized],
+        ["Budget Utilization by stations (%)", `${utilizationPercent}%`],
+        ["Your Remaining Budget", totalRemaining],
       ],
     });
 
-    // ✅ STATION WISE TABLE
+
     autoTable(doc, {
       startY: doc.lastAutoTable.finalY + 6,
       theme: "grid",
@@ -191,7 +233,7 @@ const Stations = () => {
 
           return [
             st.stationName,
-            st.allocationType || "N/A",   // ✅ NEW COLUMN
+            st.allocationType || "N/A",
             st.totalAllocated,
             st.totalUtilized,
             st.totalEstimated,
@@ -210,9 +252,10 @@ const Stations = () => {
 
     });
 
-    // ✅ SAVE
+
     doc.save(`Budget-Report-${yearLabel}.pdf`);
   };
+
 
 
 
@@ -231,10 +274,12 @@ const Stations = () => {
     }
   };
 
-  /* ✅ CREATE STATION */
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+
 
     const result = await dispatch(
       createStation(
@@ -248,17 +293,19 @@ const Stations = () => {
 
     if (result) {
       setOpenModal(false);
+      setFormData({
+        stationName: "",
+        stationCode: "",
+        email: "",
+        password: "",
+        financialYear: getCurrentFinancialYear(),
+      })
       fetchStations();
     }
 
     setLoading(false);
-    setFormData({
-      stationName: "",
-      stationCode: "",
-      email: "",
-      password: "",
-      financialYear: getCurrentFinancialYear(),
-    })
+
+
   };
 
 
@@ -267,7 +314,10 @@ const Stations = () => {
     e.preventDefault();
     if (!editStation) return;
 
-    // ✅ MUST BE FormData (but variable name still "payload")
+    if (utilizedError) return;
+
+
+
     const payload = new FormData();
 
     payload.append("totalAllocated", editForm.totalAllocated);
@@ -277,7 +327,7 @@ const Stations = () => {
     payload.append("allocationType", editForm.allocationType);
 
 
-    // ✅ THIS IS THE REAL FILE
+
     if (editForm.receipt instanceof File) {
       payload.append("receipt", editForm.receipt);
     }
@@ -298,8 +348,8 @@ const Stations = () => {
     "w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/15 text-sm text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400/70 focus:border-blue-400/70 transition";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-50">
-      {/* TOP GLOW / DECOR */}
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#1e293b_0,_#020617_45%,_#000_100%)] text-slate-50">
+
       <div className="pointer-events-none fixed inset-x-0 top-0 h-40 bg-gradient-to-b from-blue-500/30 via-transparent to-transparent blur-3xl opacity-60" />
 
       <div className="relative  max-w-[95%] mx-auto px-4 py-8 sm:py-10 lg:py-12">
@@ -438,15 +488,11 @@ const Stations = () => {
           min-w-[100px] sm:min-w-[130px]
         "
               >
-                <option value={getCurrentFinancialYear()} className="bg-slate-900">
-                  {formatFY(getCurrentFinancialYear())} (Current)
-                </option>
-                <option value={2024} className="bg-slate-900">
-                  2024-2025
-                </option>
-                <option value={2023} className="bg-slate-900">
-                  2023-2024
-                </option>
+                {financialYears.map((year) => (
+                  <option key={year} value={year} className="bg-slate-900">
+                    {formatFY(year)} {year === CURRENT_FY ? "(Current)" : ""}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -480,7 +526,11 @@ const Stations = () => {
 
 
 
-        <BudgetSummary stations={stations} selectedFY={selectedFY} />
+        <BudgetSummary
+          stations={stations}
+          selectedFY={selectedFY}
+          onAdminBudgetChange={setAdminYearlyBudget}
+        />
 
 
 
@@ -488,7 +538,8 @@ const Stations = () => {
 
 
 
-        {/* ===================== VIEW MODE TOGGLE ===================== */}
+
+        {/*  VIEW MODE TOGGLE  */}
         <div className="flex justify-end mb-5 gap-x-3">
 
           <button
@@ -623,9 +674,9 @@ const Stations = () => {
 
         </div>
 
-        {/* ============================================================= */}
-        {/* =============== CARD VIEW (DEFAULT) ========================= */}
-        {/* ============================================================= */}
+
+        {/*  CARD VIEW   */}
+
 
         {viewMode === "card" && (
           <>
@@ -780,9 +831,10 @@ const Stations = () => {
           </>
         )}
 
-        {/* ============================================================= */}
-        {/* ====================== TABLE VIEW =========================== */}
-        {/* ============================================================= */}
+
+
+        {/*  TABLE VIEW  */}
+
 
         {viewMode === "table" && (
           <div
@@ -808,7 +860,7 @@ const Stations = () => {
         border-collapse
       "
             >
-              {/* ===================== HEADER ===================== */}
+              {/*  HEADER  */}
               <thead
                 className="
           bg-white/10 
@@ -824,8 +876,12 @@ const Stations = () => {
                   <th className="px-3 sm:px-5 py-3 text-left">Utilized</th>
                   <th className="px-3 sm:px-5 py-3 text-left">Estimated</th>
 
-                  {/* NEW COLUMN → ALLOCATION TYPE */}
+                  {/* ALLOCATION TYPE */}
                   <th className="px-3 sm:px-5 py-3 text-left">Allocation Type</th>
+
+                  {/* DESCRIPTION */}
+                  <th className="px-3 sm:px-5 py-3 text-left">Description</th>
+
                   <th className="px-3 sm:px-5 py-3 text-left">Remark</th>
 
                   <th className="px-3 sm:px-5 py-3 text-left">Receipts</th>
@@ -833,7 +889,7 @@ const Stations = () => {
                 </tr>
               </thead>
 
-              {/* ===================== BODY ===================== */}
+              {/*  BODY  */}
               <tbody>
                 {stations.map((s) => (
                   <tr
@@ -871,12 +927,39 @@ const Stations = () => {
                       ₹{s.totalEstimated?.toLocaleString("en-IN") || 0}
                     </td>
 
-                    {/* NEW → ALLOCATION TYPE */}
+                    {/*  → ALLOCATION TYPE */}
                     <td className="px-3 sm:px-5 py-3 text-amber-300 font-medium whitespace-nowrap">
                       {s.allocationType || "N/A"}
                     </td>
 
-                    {/* ⭐ NEW → REMARK COLUMN */}
+
+                    {/* DESCRIPTION */}
+                    <td className="px-3 sm:px-5 py-3 text-slate-300 text-[10px] sm:text-xs max-w-[220px]">
+                      <p
+                        className={`break-words ${expandedDesc === s._id ? "" : "line-clamp-2"
+                          }`}
+                      >
+                        {s.description || "N/A"}
+                      </p>
+
+                      {s.description && s.description.length > 80 && (
+                        <button
+                          onClick={() =>
+                            setExpandedDesc(
+                              expandedDesc === s._id ? null : s._id
+                            )
+                          }
+                          className="mt-1 text-[10px] text-sky-400 hover:text-sky-300 "
+                        >
+                          {expandedDesc === s._id ? "Show less" : "Show more"}
+                        </button>
+                      )}
+                    </td>
+
+
+
+
+                    {/*  → REMARK COLUMN */}
                     <td className="px-3 sm:px-5 py-3 text-slate-300 text-[10px] sm:text-xs max-w-[180px] truncate">
                       {s.remark || "N/A"}
                     </td>
@@ -948,7 +1031,7 @@ const Stations = () => {
 
 
 
-        {/* ✅ CREATE STATION MODAL */}
+        {/*  CREATE STATION MODAL */}
         {openModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
             <div className="relative w-full max-w-md rounded-3xl border border-white/15 bg-slate-950/60 px-7 py-7 shadow-[0_22px_70px_rgba(15,23,42,0.9)] backdrop-blur-2xl">
@@ -1095,7 +1178,7 @@ const Stations = () => {
         )}
 
 
-        {/* ✅ EDIT MODAL */}
+        {/*  EDIT MODAL */}
         {openEditModal && (
           <div className="fixed  inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
             <div className="relative w-[90%] md:w-[70%]  rounded-3xl border border-white/15 bg-slate-950/60 px-7 py-7 shadow-[0_22px_70px_rgba(15,23,42,0.9)] backdrop-blur-2xl">
@@ -1120,7 +1203,7 @@ const Stations = () => {
 
               <form onSubmit={handleEditSubmit} className="relative flex flex-col gap-y-8">
 
-                {/* ✅ AMOUNT FIELDS → RESPONSIVE GRID */}
+                {/*  AMOUNT FIELDS → RESPONSIVE GRID */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
                   {/* ALLOCATED */}
@@ -1154,19 +1237,27 @@ const Stations = () => {
                     <input
                       type="number"
                       min="0"
-                      onKeyDown={(e) => {
-                        if (e.key === "-" || e.key === "e") e.preventDefault();
-                      }}
                       value={editForm.totalUtilized}
-                      onChange={(e) =>
-                        setEditForm({
-                          ...editForm,
-                          totalUtilized: e.target.value,
-                        })
-                      }
-                      className={baseInputClass}
-                      placeholder="0"
+                      onChange={(e) => {
+                        const value = Number(e.target.value);
+                        const allocated = Number(editForm.totalAllocated);
+
+                        setEditForm({ ...editForm, totalUtilized: value });
+
+                        if (value > allocated) {
+                          setUtilizedError("Total Utilized cannot exceed Total Allocated");
+                        } else {
+                          setUtilizedError("");
+                        }
+                      }}
+                      className={`${baseInputClass} ${utilizedError ? "border-red-500 focus:ring-red-400/40" : ""
+                        }`}
                     />
+                    {utilizedError && (
+                      <p className="mt-1 text-xs text-red-400">
+                        {utilizedError}
+                      </p>
+                    )}
                   </div>
 
                   {/* ESTIMATED */}
@@ -1204,13 +1295,13 @@ const Stations = () => {
                     />
                   </div>
 
-                  {/* ✅ ALLOCATION TYPE */}
+                  {/*  ALLOCATION TYPE */}
                   <div className="relative">
                     <label className="mb-1 block text-xs text-slate-300">
                       Allocation Type
                     </label>
 
-                    {/* ✅ SELECT */}
+                    {/*  SELECT */}
                     <select
                       value={editForm.allocationType}
                       onChange={(e) =>
@@ -1222,7 +1313,7 @@ const Stations = () => {
                       className={`${baseInputClass}
       bg-slate-900/60 backdrop-blur-xl cursor-pointer rounded-xl
       pr-10
-      appearance-none       /* ✅ REMOVES DEFAULT ARROW */
+      appearance-none       /*  REMOVES DEFAULT ARROW */
       hover:border-sky-400/60 hover:bg-slate-900/80
       focus:border-sky-400 focus:ring-2 focus:ring-sky-400/40
       transition`}
@@ -1241,7 +1332,7 @@ const Stations = () => {
                       </option>
                     </select>
 
-                    {/* ✅ CUSTOM DOWN ARROW */}
+                    {/*  CUSTOM DOWN ARROW */}
                     <div className="pointer-events-none absolute right-3 top-11 -translate-y-1/2 text-slate-400">
                       <svg
                         className="w-4 h-4"
@@ -1262,7 +1353,7 @@ const Stations = () => {
 
                 </div>
 
-                {/* ✅ DESCRIPTION */}
+                {/*  DESCRIPTION */}
                 <div>
                   <label className="mb-1 block text-xs text-slate-300">
                     Description
@@ -1284,7 +1375,7 @@ const Stations = () => {
                   />
                 </div>
 
-                {/* ✅ UPLOAD (FULL WIDTH) */}
+                {/*  UPLOAD (FULL WIDTH) */}
                 <div className="relative w-full">
 
                   <label className="relative flex flex-col items-center justify-center w-full h-32 sm:h-36 border-2 border-dashed border-white/20 rounded-2xl cursor-pointer bg-white/5 hover:bg-white/10 transition group overflow-hidden">
@@ -1339,7 +1430,7 @@ const Stations = () => {
                     />
                   </label>
 
-                  {/* ✅ FILE NAME + REMOVE */}
+                  {/*  FILE NAME + REMOVE */}
                   {editForm.receipt && (
                     <div className="mt-2 flex items-center justify-between gap-2">
                       <p className="text-[11px] text-emerald-300 truncate max-w-[70%]">
@@ -1359,7 +1450,7 @@ const Stations = () => {
                     </div>
                   )}
 
-                  {/* ✅ PROGRESS BAR */}
+                  {/*  PROGRESS BAR */}
                   {uploadProgress > 0 && (
                     <>
                       <div className="mt-2 w-full h-2 bg-white/10 rounded-full overflow-hidden">
@@ -1376,7 +1467,7 @@ const Stations = () => {
                   )}
                 </div>
 
-                {/* ✅ SAVE BUTTON */}
+                {/*  SAVE BUTTON */}
                 <button className="mt-4 w-full rounded-2xl bg-gradient-to-r from-emerald-400 to-sky-400 py-2.5 text-sm font-semibold text-slate-950 shadow-md shadow-emerald-400/40 hover:shadow-emerald-300/60 hover:scale-[1.01] active:scale-[0.99] transition">
                   Save Budget
                 </button>
@@ -1390,7 +1481,7 @@ const Stations = () => {
         }
 
 
-        {/* ✅ RECEIPT VIEW MODAL */}
+        {/*  RECEIPT VIEW MODAL */}
         {
           receiptList.length > 0 && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
@@ -1412,7 +1503,7 @@ const Stations = () => {
                   </button>
                 </div>
 
-                {/* ✅ IMAGE PREVIEW */}
+                {/*  IMAGE PREVIEW */}
                 <div className="flex justify-center mb-4">
                   <img
                     src={receiptList[viewReceiptIndex]}
@@ -1421,7 +1512,7 @@ const Stations = () => {
                   />
                 </div>
 
-                {/* ✅ MODAL KE ANDAR HI PREV / NEXT + OPEN + DOWNLOAD */}
+                {/*   NEXT + OPEN + DOWNLOAD */}
                 <div className="flex flex-wrap items-center justify-center gap-3">
 
                   {/* PREVIOUS */}
@@ -1454,13 +1545,13 @@ const Stations = () => {
 
                   {/* DOWNLOAD INFO */}
 
-                  {/* ✅ DESKTOP ONLY */}
+                  {/*  DESKTOP ONLY */}
                   <p className="hidden sm:block text-xs text-slate-300 mt-2 text-center leading-relaxed">
                     Right click on the image and select{" "}
                     <span className="font-semibold text-slate-100">"Save Image As"</span>
                   </p>
 
-                  {/* ✅ MOBILE ONLY */}
+                  {/*  MOBILE ONLY */}
                   <p className="block sm:hidden text-xs text-slate-300 mt-2 text-center leading-relaxed">
 
                     <span className="font-semibold text-slate-100">

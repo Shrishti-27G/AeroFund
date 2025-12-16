@@ -41,8 +41,6 @@ export const deleteFromCloudinaryByUrl = async (url) => {
   try {
     if (!url) return;
 
-    // Example URL:
-    // https://res.cloudinary.com/demo/image/upload/v12345/folder/name.jpg
     const parts = url.split("/");
     const filename = parts.pop();               // name.jpg
     const folderPath = parts.slice(parts.indexOf("upload") + 1).join("/");

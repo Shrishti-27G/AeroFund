@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { signupAdmin } from "../../services/operations/adminAuthOperations";
 import { toast } from "sonner";
+import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 
 const SignupForm = ({ switchToLogin, closeModal }) => {
     const role = "admin"; // fixed role
@@ -9,11 +10,11 @@ const SignupForm = ({ switchToLogin, closeModal }) => {
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+
 
     const submitHandler = async (e) => {
         e.preventDefault();
-
-        const adminData = { name, email, password, phone };
 
         try {
             const result = await signupAdmin(
@@ -28,13 +29,15 @@ const SignupForm = ({ switchToLogin, closeModal }) => {
                 return;
             }
 
-            toast.success("Admin account created successfully!");
-            closeModal();
+            toast.success("Account created! Please login.");
+            switchToLogin(); 
+
         } catch (err) {
-            console.error(err);
+            
             toast.error("Something went wrong");
         }
     };
+
 
     return (
         <>
@@ -67,13 +70,25 @@ const SignupForm = ({ switchToLogin, closeModal }) => {
                     required
                 />
 
-                <input
-                    type="password"
-                    placeholder="Password"
-                    className="w-full p-2 mb-4 rounded bg-white text-black"
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                />
+                <div className="relative">
+                    <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Password"
+                        className="w-full p-2 mb-4 rounded bg-white text-black pr-10"
+                        onChange={(e) => setPassword(e.target.value)}
+                        autoComplete="new-password"
+                        required
+                    />
+
+                    {/*  Eye Toggle */}
+                    <span
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-5 -translate-y-1/2 cursor-pointer text-gray-700 text-xl"
+                    >
+                        {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
+                    </span>
+                </div>
+
 
                 <button className="w-full bg-blue-600 p-3 rounded-lg font-semibold">
                     Register as Admin
@@ -83,7 +98,26 @@ const SignupForm = ({ switchToLogin, closeModal }) => {
                     className="mt-4 text-center text-blue-200 cursor-pointer"
                     onClick={switchToLogin}
                 >
-                    Already have an account? Login
+                    Already have an account?
+                    <span className="relative font-semibold ml-2 text-red-400">
+                        Login
+                        <span
+                            className="
+    absolute
+    -right-2
+    top-1/2
+    -translate-y-1/2
+    h-1.5
+    w-1.5
+    bg-red-400
+    rounded-full
+    animate-bounce
+    shadow-[0_0_8px_rgba(248,113,113,0.8)]
+  "
+                        />
+
+                    </span>
+
                 </p>
             </form>
         </>

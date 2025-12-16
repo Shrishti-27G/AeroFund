@@ -55,48 +55,52 @@ export const signupAdmin = async (req, res) => {
 
 
 
+
+
 export const loginAdmin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password)
+    if (!email || !password) {
       return res.status(400).json({ message: "Email & password required" });
+    }
 
     const supervisor = await Supervisor.findOne({ email });
-    if (!supervisor)
+    if (!supervisor) {
       return res.status(404).json({ message: "Supervisor not found" });
+    }
 
     const isValid = await supervisor.isPasswordCorrect(password);
-    if (!isValid)
+    if (!isValid) {
       return res.status(401).json({ message: "Invalid credentials" });
+    }
 
-    // ✅ TOKENS
+    
     const accessToken = supervisor.generateAccessToken();   // 10s
     const refreshToken = supervisor.generateRefreshToken(); // 2d
 
-    // ✅ SAVE IN DB
+    
     supervisor.accessToken = accessToken;
     supervisor.refreshToken = refreshToken;
     await supervisor.save();
 
-    // ✅ ACCESS TOKEN COOKIE (SHORT LIFE)
-    // ✅ ACCESS TOKEN COOKIE (1 DAY)
+    
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
       sameSite: "lax",
       secure: false,
-      maxAge: 1 * 24 * 60 * 60 * 1000, // ✅ 1 day
+      maxAge: 1 * 24 * 60 * 60 * 1000,
     });
 
-    // ✅ REFRESH TOKEN COOKIE (5 DAYS)
+    
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       sameSite: "lax",
       secure: false,
-      maxAge: 5 * 24 * 60 * 60 * 1000, // ✅ 5 days
+      maxAge: 5 * 24 * 60 * 60 * 1000,
     });
 
-
+    
     res.status(200).json({
       message: "Login successful",
       supervisor: {
@@ -104,6 +108,9 @@ export const loginAdmin = async (req, res) => {
         name: supervisor.name,
         email: supervisor.email,
         role: supervisor.role,
+
+       
+        yearlyBudgets: supervisor.yearlyBudgets || [],
       },
     });
   } catch (error) {
@@ -115,9 +122,10 @@ export const loginAdmin = async (req, res) => {
 
 
 
+
 export const logoutAdmin = async (req, res) => {
   try {
-    const supervisorId = req.admin?._id; // ✅ FIXED
+    const supervisorId = req.admin?._id; 
 
     console.log("logout -> ", req.a);
 
@@ -178,17 +186,17 @@ export const refreshAccessToken = async (req, res) => {
       });
     }
 
-    // ✅ NEW ACCESS TOKEN
+    
     const newAccessToken = admin.generateAccessToken();
     admin.accessToken = newAccessToken;
     await admin.save();
 
-    // ✅ SET NEW COOKIE
+   
     res.cookie("accessToken", newAccessToken, {
       httpOnly: true,
       sameSite: "lax",
       secure: false,
-      maxAge: 10 * 1000, // ✅ 10 sec
+      maxAge: 10 * 1000, 
     });
 
     return res.status(200).json({
