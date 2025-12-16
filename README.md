@@ -84,7 +84,7 @@ npm run dev
 
 Runs on:
 ```
-http://localhost:3001
+http://localhost:5173
 ```
 
 ---
