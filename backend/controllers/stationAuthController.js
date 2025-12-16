@@ -1,4 +1,5 @@
 import { Station } from "../models/stationsModel.js";
+import { Supervisor } from "../models/supervisorModel.js";
 import bcrypt from "bcryptjs";
 
 const accessCookieOptions = {
@@ -17,20 +18,18 @@ const refreshCookieOptions = {
 
 
 
-
-
-
-// ----------------------------------------
-// ✅ LOGIN STATION
-// ----------------------------------------
-
+// admin controller
 export const createStation = async (req, res) => {
   try {
-    const { stationName, stationCode, password, email, financialYear } = req.body;
 
-    console.log("req -> ", req.body);
+    console.log("req -> ", req.admin);
 
-    // ✅ FULL VALIDATION
+    const supervisorId = req.admin._id;
+
+    const { stationName, stationCode, password, email, financialYear } =
+      req.body;
+
+    // ✅ VALIDATION
     if (!stationName || !stationCode || !password || !email || !financialYear) {
       return res.status(400).json({
         message:
@@ -38,17 +37,14 @@ export const createStation = async (req, res) => {
       });
     }
 
-    // ✅ SAFE FINANCIAL YEAR HANDLING
+    // ✅ FINANCIAL YEAR PARSE
     let year;
-
     if (typeof financialYear === "string") {
-      year = parseInt(financialYear.split("-")[0]);
+      year = parseInt(financialYear.split("-")[0], 10);
     } else if (typeof financialYear === "number") {
       year = financialYear;
     } else {
-      return res.status(400).json({
-        message: "Invalid Financial Year format",
-      });
+      return res.status(400).json({ message: "Invalid Financial Year format" });
     }
 
     if (isNaN(year)) {
@@ -57,45 +53,63 @@ export const createStation = async (req, res) => {
       });
     }
 
-    // ✅ CHECK IF STATION ALREADY EXISTS
+    // =====================================================
+    // ✅ GLOBAL UNIQUE STATION CODE CHECK
+    // =====================================================
     let station = await Station.findOne({ stationCode });
 
-    // ✅ IF STATION EXISTS → CHECK IF SAME YEAR DATA EXISTS
+    // 🔁 STATION CODE EXISTS ANYWHERE
     if (station) {
-      const yearExists = station.yearlyData.some(
-        (item) => item.year === year
-      );
+      // ✅ SAME SUPERVISOR → MAY ADD NEW FY
+      if (
+        station.createdBy &&
+        station.createdBy.toString() === supervisorId.toString()
+      ) {
 
-      if (yearExists) {
-        return res.status(409).json({
-          message: `Station already exists for Financial Year ${year}`,
+        const yearExists = station.yearlyData.some(
+          (item) => item.year === year
+        );
+
+        if (yearExists) {
+          return res.status(409).json({
+            message: `Station already exists for Financial Year ${year}-${year + 1}`,
+          });
+        }
+
+        station.yearlyData.push({
+          year,
+          totalAllocated: 0,
+          totalUtilized: 0,
+          totalEstimated: 0,
+          remark: "N/A",
+          receipts: [],
+        });
+
+        await station.save();
+
+        return res.status(201).json({
+          success: true,
+          message: "New Financial Year added successfully",
+          station,
         });
       }
 
-      // ✅ ADD NEW FINANCIAL YEAR DATA
-      station.yearlyData.push({
-        year,
-        totalAllocated: 0,
-        totalUtilized: 0,
-        totalEstimated: 0,
-        remark: "N/A",
-        receipt: "Not Uploaded",
-      });
-
-      await station.save(); // ✅ model will NOT re-hash password here
-
-      return res.status(201).json({
-        message: "New Financial Year added successfully",
-        station,
+      // ❌ DIFFERENT SUPERVISOR → BLOCK
+      return res.status(409).json({
+        success: false,
+        message: "Station Code already exists. Station codes must be unique.",
       });
     }
 
-    // ✅ CREATE NEW STATION (PLAIN PASSWORD → MODEL HASHES IT)
+    // =====================================================
+    // ✅ CREATE BRAND NEW STATION
+    // =====================================================
     const newStation = await Station.create({
       stationName,
       stationCode,
       email,
-      password, // ✅ DO NOT HASH HERE
+      password,
+      createdBy: supervisorId,
       yearlyData: [
         {
           year,
@@ -103,18 +117,33 @@ export const createStation = async (req, res) => {
           totalUtilized: 0,
           totalEstimated: 0,
           remark: "N/A",
-          receipt: "Not Uploaded",
+          receipts: [],
         },
       ],
     });
 
+    await Supervisor.findByIdAndUpdate(supervisorId, {
+      $push: { createdStations: newStation._id },
+    });
+
     res.status(201).json({
+      success: true,
       message: "Station created successfully",
       station: newStation,
     });
   } catch (error) {
     console.error("Create Station Error:", error);
+
+    // ✅ HANDLE DUPLICATE KEY ERROR (SAFETY NET)
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "Station Code already exists. Must be unique.",
+      });
+    }
+
     res.status(500).json({
+      success: false,
       message: "Server error while creating station",
       error: error.message,
     });
@@ -123,6 +152,7 @@ export const createStation = async (req, res) => {
 
 
 
+// stations controllers
 export const loginStation = async (req, res) => {
   try {
     const { stationCode, password } = req.body;
@@ -176,9 +206,7 @@ export const loginStation = async (req, res) => {
 };
 
 
-// ----------------------------------------
-// ✅ LOGOUT STATION
-// ----------------------------------------
+
 export const logoutStation = async (req, res) => {
   try {
     const stationId = req.station?._id; // ✅ MATCHING logoutAdmin style
@@ -214,8 +242,6 @@ export const logoutStation = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
-
 
 
 export const refreshStationAccessToken = async (req, res) => {

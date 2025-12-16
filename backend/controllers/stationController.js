@@ -1,60 +1,34 @@
 import { Station } from "../models/stationsModel.js";
-import { uploadImageToCloudinary } from "../config/imageUploader.js";
+import { uploadImageToCloudinary, deleteFromCloudinaryByUrl } from "../config/imageUploader.js";
+import mongoose from "mongoose";
+import { Supervisor } from "../models/supervisorModel.js";
 
 
-
-// export const getStationByFinancialYear = async (req, res) => {
-//   try {
-//     const { stationCode, financialYear } = req.params;
-
-//     const station = await Station.findOne(
-//       {
-//         stationCode,
-//         "yearlyData.financialYear": financialYear,
-//       },
-//       {
-//         stationName: 1,
-//         stationCode: 1,
-//         email: 1,
-//         "yearlyData.$": 1, // ✅ Only matched financial year
-//       }
-//     );
-
-//     if (!station) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "No data found for this financial year",
-//       });
-//     }
-
-//     res.status(200).json({
-//       success: true,
-//       station,
-//     });
-
-//   } catch (error) {
-//     console.error("Financial Year Fetch Error:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Server error",
-//     });
-//   }
-// };
-
-
+//  asmin controller
 export const updateYearlyBudget = async (req, res) => {
   try {
-    const { stationCode, year } = req.params;
-    const { totalAllocated, totalUtilized, totalEstimated, remark, description, allocationType } = req.body;
+    const supervisorId = req.admin._id;
+    const { stationId, year } = req.params;
 
-    console.log("Edit req body -> ", req.body);
-    console.log("Edit req files -> ", req.files);
-
+    const {
+      totalAllocated,
+      totalUtilized,
+      totalEstimated,
+      remark,
+      description,
+      allocationType,
+    } = req.body;
 
     // ✅ BASIC VALIDATION
-    if (!stationCode || !year) {
+    if (!stationId || !year) {
       return res.status(400).json({
-        message: "Station Code and Year are required",
+        message: "Station ID and Year are required",
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(stationId)) {
+      return res.status(400).json({
+        message: "Invalid Station ID",
       });
     }
 
@@ -65,35 +39,37 @@ export const updateYearlyBudget = async (req, res) => {
       });
     }
 
-    // ✅ FIND STATION
-    const station = await Station.findOne({ stationCode });
+    // ✅ FIND STATION (SECURE: ONLY OWNER SUPERVISOR)
+    const station = await Station.findOne({
+      _id: stationId,
+      createdBy: supervisorId, // 🔐 SECURITY
+    });
 
     if (!station) {
       return res.status(404).json({
-        message: "Station not found",
+        message: "Station not found or access denied",
       });
     }
 
     // ✅ HANDLE RECEIPT IMAGE UPLOAD
     let receiptUrl = null;
 
-    if (req.files && req.files.receipt) {
-      const receiptFile = req.files.receipt;
-
+    if (req.files?.receipt) {
       const uploadResult = await uploadImageToCloudinary(
-        receiptFile,
+        req.files.receipt,
         "station-receipts"
       );
-
       receiptUrl = uploadResult.secure_url;
     }
 
-    // ✅ FIND EXISTING YEAR RECORD
+    // ✅ FIND YEAR RECORD
     let yearlyRecord = station.yearlyData.find(
       (item) => item.year === parsedYear
     );
 
-    // ✅ ✅ IF YEAR DOES NOT EXIST → CREATE IT
+    // =====================================================
+    // 🆕 CREATE YEAR IF NOT EXISTS
+    // =====================================================
     if (!yearlyRecord) {
       const newYearRecord = {
         year: parsedYear,
@@ -101,10 +77,8 @@ export const updateYearlyBudget = async (req, res) => {
         totalUtilized: totalUtilized ?? 0,
         totalEstimated: totalEstimated ?? 0,
         remark: remark ?? "N/A",
-        description: description ?? "N/A",
-        allocationType: allocationType,
-
-        // ✅ INIT RECEIPTS ARRAY
+        description: description ?? "",
+        allocationType: allocationType ?? "",
         receipts: receiptUrl ? [receiptUrl] : [],
       };
 
@@ -112,53 +86,50 @@ export const updateYearlyBudget = async (req, res) => {
       await station.save();
 
       return res.status(201).json({
-        message: `Yearly budget created successfully for ${parsedYear}`,
+        success: true,
+        message: `Yearly budget created successfully for ${parsedYear}-${parsedYear + 1}`,
         createdYear: newYearRecord,
-        station,
       });
     }
 
-    // ✅ ✅ IF YEAR EXISTS → UPDATE ONLY PROVIDED FIELDS
+    // =====================================================
+    // 🔁 UPDATE EXISTING YEAR
+    // =====================================================
     if (totalAllocated !== undefined)
-      yearlyRecord.totalAllocated = totalAllocated;
+      yearlyRecord.totalAllocated = Number(totalAllocated);
 
     if (totalUtilized !== undefined)
-      yearlyRecord.totalUtilized = totalUtilized;
+      yearlyRecord.totalUtilized = Number(totalUtilized);
 
     if (totalEstimated !== undefined)
-      yearlyRecord.totalEstimated = totalEstimated;
-
-    if (description !== undefined) {
-      yearlyRecord.description = description;
-    }
-
-    if (allocationType !== undefined) {
-      yearlyRecord.allocationType = allocationType;
-    }
-
+      yearlyRecord.totalEstimated = Number(totalEstimated);
 
     if (remark !== undefined)
       yearlyRecord.remark = remark;
 
-    // ✅ ✅ APPEND NEW RECEIPT (DO NOT REPLACE)
+    if (description !== undefined)
+      yearlyRecord.description = description;
+
+    if (allocationType !== undefined)
+      yearlyRecord.allocationType = allocationType;
+
+    // ✅ APPEND RECEIPT (DO NOT REPLACE)
     if (receiptUrl) {
-      if (!yearlyRecord.receipts) {
-        yearlyRecord.receipts = [];
-      }
-      yearlyRecord.receipts.push(receiptUrl); // ✅ KEEP OLD + ADD NEW
+      yearlyRecord.receipts ??= [];
+      yearlyRecord.receipts.push(receiptUrl);
     }
 
-    // ✅ SAVE UPDATED DATA
     await station.save();
 
     res.status(200).json({
+      success: true,
       message: "Yearly budget updated successfully",
       updatedYear: yearlyRecord,
-      station,
     });
   } catch (error) {
     console.error("Update/Create Yearly Budget Error:", error);
     res.status(500).json({
+      success: false,
       message: "Server error while updating yearly budget",
       error: error.message,
     });
@@ -166,14 +137,25 @@ export const updateYearlyBudget = async (req, res) => {
 };
 
 
+
+
 export const getAllStations = async (req, res) => {
   try {
-    const { year } = req.query; // ✅ READ YEAR FROM QUERY
+    const { year } = req.query;
     const filterYear = year ? Number(year) : null;
+
+    const supervisorId = req.admin._id; // ✅ logged-in supervisor
 
     const pipeline = [];
 
-    // ✅ IF YEAR IS PROVIDED → PICK THAT YEAR FROM yearlyData
+    // ✅ ONLY STATIONS CREATED BY THIS SUPERVISOR
+    pipeline.push({
+      $match: {
+        createdBy: new mongoose.Types.ObjectId(supervisorId),
+      },
+    });
+
+    // ✅ IF YEAR PROVIDED
     if (filterYear) {
       pipeline.push({
         $addFields: {
@@ -188,13 +170,13 @@ export const getAllStations = async (req, res) => {
       });
     }
 
-    // ✅ IF NO YEAR → PICK LATEST YEAR
+    // ✅ IF NO YEAR → LATEST YEAR
     if (!filterYear) {
       pipeline.push({ $unwind: "$yearlyData" });
       pipeline.push({ $sort: { "yearlyData.year": -1 } });
     }
 
-    // ✅ FINAL SHAPE (ALWAYS RETURN STATION)
+    // ✅ PROJECT FINAL SHAPE
     pipeline.push({
       $project: {
         stationName: 1,
@@ -203,18 +185,20 @@ export const getAllStations = async (req, res) => {
         createdAt: 1,
         updatedAt: 1,
 
+        financialYear: {
+          $cond: [
+            { $ifNull: [filterYear, false] },
+            filterYear,
+            "$yearlyData.year",
+          ],
+        },
 
         description: {
           $cond: [
             { $gt: [{ $size: "$yearlyDataFiltered" }, 0] },
-            {
-              $ifNull: [
-                { $arrayElemAt: ["$yearlyDataFiltered.description", 0] },
-                ""
-              ]
-            },
-            ""
-          ]
+            { $arrayElemAt: ["$yearlyDataFiltered.description", 0] },
+            "",
+          ],
         },
 
         allocationType: {
@@ -222,14 +206,6 @@ export const getAllStations = async (req, res) => {
             { $gt: [{ $size: "$yearlyDataFiltered" }, 0] },
             { $arrayElemAt: ["$yearlyDataFiltered.allocationType", 0] },
             "N/A",
-          ],
-        },
-
-        financialYear: {
-          $cond: [
-            { $ifNull: [filterYear, false] },
-            filterYear,
-            "$yearlyData.year",
           ],
         },
 
@@ -265,24 +241,16 @@ export const getAllStations = async (req, res) => {
           ],
         },
 
-
         receipts: {
           $cond: [
             { $gt: [{ $size: "$yearlyDataFiltered" }, 0] },
-            {
-              $ifNull: [
-                { $arrayElemAt: ["$yearlyDataFiltered.receipts", 0] },
-                [],
-              ],
-            },
+            { $arrayElemAt: ["$yearlyDataFiltered.receipts", 0] },
             [],
           ],
         },
-
       },
     });
 
-    // ✅ SORT STATIONS ALPHABETICALLY
     pipeline.push({ $sort: { stationName: 1 } });
 
     const stations = await Station.aggregate(pipeline);
@@ -292,10 +260,8 @@ export const getAllStations = async (req, res) => {
       count: stations.length,
       stations,
     });
-
   } catch (error) {
     console.error("Get All Stations Error:", error);
-
     res.status(500).json({
       success: false,
       message: "Server error while fetching stations",
@@ -304,55 +270,142 @@ export const getAllStations = async (req, res) => {
 };
 
 
-// export const getStationByFinancialYear = async (req, res) => {
-//   try {
-//     const { stationCode } = req.params;
-//     let { year } = req.params;
 
-//     // If frontend didn't pass FY → auto use CURRENT FY
-//     if (!year) {
-//       year = getCurrentFinancialYear();
-//     }
 
-//     const station = await Station.findOne(
-//       {
-//         stationCode,
-//         "yearlyData.year": Number(year),
-//       },
-//       {
-//         stationName: 1,
-//         stationCode: 1,
-//         email: 1,
-//         "yearlyData.$": 1,   // return only matched FY
-//       }
-//     );
+export const deleteStation = async (req, res) => {
+  try {
+    const { stationId } = req.params;
+    const supervisorId = req.admin._id;
 
-//     if (!station) {
-//       return res.status(404).json({
-//         success: false,
-//         message: `No data found for FY ${year}-${year + 1}`,
-//       });
-//     }
+    if (!mongoose.Types.ObjectId.isValid(stationId)) {
+      return res.status(400).json({ success: false, message: "Invalid station ID" });
+    }
 
-//     res.status(200).json({
-//       success: true,
-//       year,
-//       station: station,
-//     });
+    const station = await Station.findOne({
+      _id: stationId,
+      createdBy: supervisorId,
+    });
 
-//   } catch (error) {
-//     console.error("Financial Year Fetch Error:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Server error",
-//     });
-//   }
-// };
+    if (!station) {
+      return res.status(404).json({
+        success: false,
+        message: "Station not found or not authorized",
+      });
+    }
 
+    // 🔥 DELETE ALL RECEIPTS FROM CLOUDINARY
+    for (const year of station.yearlyData) {
+      if (Array.isArray(year.receipts)) {
+        for (const receiptUrl of year.receipts) {
+          await deleteFromCloudinaryByUrl(receiptUrl);
+        }
+      }
+    }
+
+    // 🗑 DELETE STATION
+    await Station.findByIdAndDelete(stationId);
+
+    // 🧹 REMOVE FROM SUPERVISOR
+    await Supervisor.findByIdAndUpdate(supervisorId, {
+      $pull: { createdStations: stationId },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Station and all receipts deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete Station Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while deleting station",
+    });
+  }
+};
+
+
+
+export const deleteFinancialYear = async (req, res) => {
+  try {
+    const { stationId, year } = req.params;
+    const supervisorId = req.admin._id;
+
+    const parsedYear = Number(year);
+    if (isNaN(parsedYear)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid year format",
+      });
+    }
+
+    const station = await Station.findOne({
+      _id: stationId,
+      createdBy: supervisorId,
+    });
+
+    if (!station) {
+      return res.status(404).json({
+        success: false,
+        message: "Station not found or not authorized",
+      });
+    }
+
+    const yearData = station.yearlyData.find(
+      (y) => y.year === parsedYear
+    );
+
+    if (!yearData) {
+      return res.status(404).json({
+        success: false,
+        message: `Financial year ${parsedYear}-${parsedYear + 1} not found`,
+      });
+    }
+
+    // 🔥 DELETE RECEIPTS FROM CLOUDINARY
+    if (Array.isArray(yearData.receipts)) {
+      for (const receiptUrl of yearData.receipts) {
+        await deleteFromCloudinaryByUrl(receiptUrl);
+      }
+    }
+
+    // 🗑 REMOVE FINANCIAL YEAR
+    station.yearlyData = station.yearlyData.filter(
+      (y) => y.year !== parsedYear
+    );
+
+    await station.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Financial year ${parsedYear}-${parsedYear + 1} deleted`,
+      station,
+    });
+  } catch (error) {
+    console.error("Delete Financial Year Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while deleting financial year",
+    });
+  }
+};
+
+
+
+
+
+//  stations controller
 export const getStationByFinancialYear = async (req, res) => {
   try {
-    const { stationCode } = req.params;
+    const { stationId } = req.params;
     let { year } = req.params;
+
+    // ✅ VALIDATE STATION ID
+    if (!mongoose.Types.ObjectId.isValid(stationId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Station ID",
+      });
+    }
 
     // 👉 Auto-detect current FY if not passed
     if (!year) {
@@ -362,32 +415,39 @@ export const getStationByFinancialYear = async (req, res) => {
       year = mon >= 4 ? yr : yr - 1;
     }
 
+    const parsedYear = Number(year);
+    if (isNaN(parsedYear)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid financial year",
+      });
+    }
+
     const station = await Station.findOne(
       {
-        stationCode,
-        "yearlyData.year": Number(year),
+        _id: stationId,
+        "yearlyData.year": parsedYear,
       },
       {
         stationName: 1,
         stationCode: 1,
         email: 1,
-        "yearlyData.$": 1 // returns ONLY the matched FY object with ALL subfields
+        "yearlyData.$": 1, // ✅ ONLY MATCHED FY
       }
     );
 
     if (!station) {
       return res.status(404).json({
         success: false,
-        message: `No data found for FY ${year}-${year + 1}`,
+        message: `No data found for FY ${parsedYear}-${parsedYear + 1}`,
       });
     }
 
     return res.status(200).json({
       success: true,
-      year: Number(year),
+      year: parsedYear,
       station,
     });
-
   } catch (error) {
     console.error("Financial Year Fetch Error:", error);
     res.status(500).json({
@@ -401,7 +461,7 @@ export const getStationByFinancialYear = async (req, res) => {
 
 export const updateRemark = async (req, res) => {
   try {
-    const { stationCode, year } = req.params;
+    const { stationId, year } = req.params;
     const { remark } = req.body;
 
     if (!remark) {
@@ -411,10 +471,26 @@ export const updateRemark = async (req, res) => {
       });
     }
 
+    // ✅ VALIDATE STATION ID
+    if (!mongoose.Types.ObjectId.isValid(stationId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Station ID",
+      });
+    }
+
+    const parsedYear = Number(year);
+    if (isNaN(parsedYear)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid year format",
+      });
+    }
+
     const station = await Station.findOneAndUpdate(
       {
-        stationCode,
-        "yearlyData.year": Number(year),
+        _id: stationId,
+        "yearlyData.year": parsedYear,
       },
       {
         $set: {

@@ -24,11 +24,11 @@ export const loginStation = async (stationCode, password) => {
 };
 
 
-export const getStationYearData = async (stationCode, year = "") => {
+export const getStationYearData = async (StationId, year = "") => {
   try {
     const response = await apiConnector(
       "GET",
-      `${GET_STATION_BY_FINANCIAL_YEAR}/${stationCode}/${year}`
+      `${GET_STATION_BY_FINANCIAL_YEAR}/${StationId}/${year}`
     );
 
     console.log("yearly data -> ", response);
@@ -44,11 +44,11 @@ export const getStationYearData = async (stationCode, year = "") => {
 
 
 
-export const updateRemark = async (stationCode, year, remark) => {
+export const updateRemark = async (StationId, year, remark) => {
   try {
     const response = await apiConnector(
       "PUT",
-      `${UPDATE_REMARK_API}/${stationCode}/${year}`,
+      `${UPDATE_REMARK_API}/${StationId}/${year}`,
       { remark }
     );
 

@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { stationEndpoints } from "../apiEndpoints/stationsEndpoints.js"
 
 
-export const { Create_Stations_API, Get_All_Stations_API, Update_Budget_API } = stationEndpoints;
+export const { Create_Stations_API, Get_All_Stations_API, Update_Budget_API, Delete_Financial_Year_API, Delete_Station_API } = stationEndpoints;
 
 
 
@@ -76,7 +76,7 @@ export const getAllStations = (year) => async (dispatch) => {
 
 
 export const updateYearlyBudget = (
-    stationCode,
+    stationId,
     year,
     budgetData
 ) => async (dispatch) => {
@@ -85,7 +85,7 @@ export const updateYearlyBudget = (
 
         const response = await apiConnector(
             "PUT",
-            `${Update_Budget_API}/${stationCode}/${year}`, 
+            `${Update_Budget_API}/${stationId}/${year}`, 
             budgetData
         );
 
@@ -106,3 +106,61 @@ export const updateYearlyBudget = (
 };
 
 
+
+
+
+export const deleteStation = (stationId) => async (dispatch) => {
+    try {
+      const response = await apiConnector(
+        "DELETE",
+        `${Delete_Station_API}/${stationId}`
+      );
+  
+      if (!response?.data?.success) {
+        // toast.error("Failed to delete station");
+        return false;
+      }
+  
+    //   toast.success(response.data.message || "Station deleted successfully");
+      return true;
+  
+    } catch (error) {
+      console.error("DELETE STATION ERROR →", error);
+      const msg =
+        error?.response?.data?.message ||
+        "Server error while deleting station";
+    //   toast.error(msg);
+      return false;
+    }
+  };
+  
+
+  
+export const deleteFinancialYear = (stationId, year) => async (dispatch) => {
+    try {
+      const response = await apiConnector(
+        "DELETE",
+        `${Delete_Financial_Year_API}/${stationId}/year/${year}`
+      );
+  
+      if (!response?.data?.success) {
+        // toast.error("Failed to delete financial year");
+        return false;
+      }
+  
+    //   toast.success(
+    //     response.data.message ||
+    //     `Financial year ${year}-${year + 1} deleted`
+    //   );
+  
+      return true;
+  
+    } catch (error) {
+      console.error("DELETE FINANCIAL YEAR ERROR →", error);
+      const msg =
+        error?.response?.data?.message ||
+        "Server error while deleting financial year";
+    //   toast.error(msg);
+      return false;
+    }
+  };

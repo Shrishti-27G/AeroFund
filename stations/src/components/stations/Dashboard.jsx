@@ -51,7 +51,7 @@ const Dashboard = () => {
       setLoading(true);
 
       try {
-        const res = await getStationYearData(station.stationCode, selectedFY);
+        const res = await getStationYearData(station._id, selectedFY);
         if (res?.station?.yearlyData?.length > 0) {
           setYearData(res.station.yearlyData[0]);
         } else setYearData(null);
@@ -238,9 +238,13 @@ const Dashboard = () => {
 
               <button
                 onClick={async () => {
-                  const res = await updateRemark(station.stationCode, selectedFY, newRemark);
+                  const res = await updateRemark(
+                    station._id,
+                    selectedFY,
+                    newRemark
+                  );
 
-                  if (res.success) {
+                  if (res?.success) {
                     setYearData((d) => ({ ...d, remark: newRemark }));
                     setOpenRemarkModal(false);
                   }
@@ -249,6 +253,7 @@ const Dashboard = () => {
               >
                 Save
               </button>
+
             </div>
 
           </div>

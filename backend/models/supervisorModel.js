@@ -33,6 +33,14 @@ const supervisorSchema = new Schema(
       ref: "Station",
     },
 
+
+    createdStations: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Station",
+      },
+    ],
+
     role: {
       type: String,
       enum: ["admin"],

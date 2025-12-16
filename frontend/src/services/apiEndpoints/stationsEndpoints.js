@@ -6,4 +6,6 @@ export const stationEndpoints = {
     Create_Stations_API: BASE_URL + "/stations/create-station",
     Get_All_Stations_API: BASE_URL + "/stations/get-all-stations",
     Update_Budget_API: BASE_URL + "/stations/update-budget",
+    Delete_Station_API: BASE_URL + "/stations/delete-station",
+    Delete_Financial_Year_API: BASE_URL + "/stations/delete-financial-year",
 };

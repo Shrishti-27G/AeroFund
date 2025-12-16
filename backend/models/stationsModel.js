@@ -88,6 +88,12 @@ const stationSchema = new Schema(
       default: null,
     },
 
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "Supervisor",
+      required: true,
+    },
+
     // ✅ ✅ YEAR-WISE STORAGE
     yearlyData: [yearlyBudgetSchema],
   },

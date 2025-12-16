@@ -10,6 +10,9 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 import BudgetSummary from "./BudgetSummary.jsx";
+import DeleteStationModal from "./DeleteStationModal.jsx";
+import { deleteStation, deleteFinancialYear } from "../../services/operations/stationsOperations.js";
+
 
 
 /* ✅ RETURN NUMBER YEAR */
@@ -34,7 +37,10 @@ const Stations = () => {
   const [receiptList, setReceiptList] = useState([]);
   const [viewReceiptIndex, setViewReceiptIndex] = useState(0);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [viewMode, setViewMode] = useState("card");
+  const [viewMode, setViewMode] = useState("table");
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
+
+
 
 
 
@@ -48,9 +54,36 @@ const Stations = () => {
 
     handleResize(); // Run initially
 
+
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+
+  const handleDeleteStation = async (stationId) => {
+    const success = await dispatch(deleteStation(stationId));
+
+    console.log("success -> ", success);
+
+    if (success) {
+      await fetchStations();      // ✅ refetch latest data
+      setOpenDeleteModal(false);  // ✅ close modal
+
+    }
+  };
+
+
+  const handleDeleteYear = async (stationId, year) => {
+    const success = await dispatch(deleteFinancialYear(stationId, year));
+
+    console.log("success -> ", success);
+
+    if (success) {
+      await fetchStations();      // ✅ refetch latest data
+      setOpenDeleteModal(false);
+
+    }
+  };
 
 
 
@@ -219,6 +252,13 @@ const Stations = () => {
     }
 
     setLoading(false);
+    setFormData({
+      stationName: "",
+      stationCode: "",
+      email: "",
+      password: "",
+      financialYear: getCurrentFinancialYear(),
+    })
   };
 
 
@@ -243,7 +283,7 @@ const Stations = () => {
     }
 
     const result = await dispatch(
-      updateYearlyBudget(editStation.stationCode, selectedFY, payload)
+      updateYearlyBudget(editStation._id, selectedFY, payload)
     );
 
     if (result) {
@@ -258,96 +298,145 @@ const Stations = () => {
     "w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/15 text-sm text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400/70 focus:border-blue-400/70 transition";
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#1e293b_0,_#020617_45%,_#000_100%)] text-slate-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-50">
       {/* TOP GLOW / DECOR */}
       <div className="pointer-events-none fixed inset-x-0 top-0 h-40 bg-gradient-to-b from-blue-500/30 via-transparent to-transparent blur-3xl opacity-60" />
 
       <div className="relative  max-w-[95%] mx-auto px-4 py-8 sm:py-10 lg:py-12">
         {/* HEADER + FY FILTER BAR */}
-        <div className="mb-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 border border-white/10 shadow-sm shadow-black/40 backdrop-blur-xl">
+        <div
+          className="
+    mb-10
+    flex flex-col
+    gap-6
+    md:flex-row
+    md:items-center
+    md:justify-between
+  "
+        >
+          <div className="max-w-4xl">
+            {/* BADGE */}
+            <div
+              className="
+      inline-flex items-center gap-2
+      rounded-full
+      bg-white/5
+      px-3 py-1
+      border border-white/10
+      shadow-sm shadow-black/40
+      backdrop-blur-xl
+    "
+            >
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs uppercase tracking-[0.2em] text-slate-300/80">
+              <span
+                className="
+        text-[10px] sm:text-xs
+        uppercase
+        tracking-[0.18em] sm:tracking-[0.2em]
+        text-slate-300/80
+        whitespace-nowrap
+      "
+              >
                 AeroFund · Control Panel
               </span>
             </div>
-            <h1 className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-slate-50">
+
+            {/* TITLE */}
+            <h1
+              className="
+      mt-4
+      text-2xl
+      sm:text-3xl
+      md:text-4xl
+      lg:text-5xl
+      xl:text-[3.2rem]
+      font-semibold
+      tracking-tight
+      leading-tight
+      text-slate-50
+    "
+            >
               Stations Overview
             </h1>
-            <p className="mt-2 text-sm sm:text-base text-slate-300/80">
-              Manage yearly budgets for all stations with a clean, liquid-glass
-              interface.
+
+            {/* DESCRIPTION */}
+            <p
+              className="
+      mt-2
+      max-w-prose
+      text-xs
+      sm:text-sm
+      md:text-base
+      text-slate-300/80
+      leading-relaxed
+    "
+            >
+              Manage yearly budgets for all stations with a clean, liquid-glass interface.
             </p>
           </div>
 
 
 
-          <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
 
+          <div
+            className="
+      flex flex-wrap
+      items-start sm:items-center
+      gap-3
+      sm:gap-4
+      md:justify-end
+    "
+          >
+            {/* DOWNLOAD */}
             <button
               onClick={() => downloadBudgetReport(stations, selectedFY)}
               className="
-    relative inline-flex items-center justify-center
-    rounded-xl sm:rounded-2xl
-    bg-white/10
-    px-3 sm:px-3.5
-    py-2 sm:py-2.5
-    text-[11px] sm:text-xs
-    font-semibold
-    text-slate-50
-    border border-white/20
-    hover:bg-white/20
-    hover:border-sky-300/60
-    transition
-    whitespace-nowrap
-  "
+        inline-flex items-center justify-center
+        rounded-xl sm:rounded-2xl
+        bg-white/10
+        px-3.5 py-2 sm:py-2.5
+        text-[11px] sm:text-xs
+        font-semibold
+        text-slate-50
+        border border-white/20
+        hover:bg-white/20
+        hover:border-sky-300/60
+        transition
+        whitespace-nowrap
+      "
             >
               Download Report (PDF)
             </button>
 
-
-            {/* FY DROPDOWN */}
+            {/* FY SELECT */}
             <div
               className="
-    inline-flex items-center gap-1.5 sm:gap-2
-    rounded-xl sm:rounded-2xl
-    bg-white/5
-    border border-white/15
-    px-2.5 sm:px-3
-    py-1.5 sm:py-2
-    backdrop-blur-xl
-    shadow-sm shadow-black/40
-    max-w-full
-    justify-center
-  "
+        inline-flex items-center gap-2
+        rounded-xl sm:rounded-2xl
+        bg-white/5
+        border border-white/15
+        px-3 py-2
+        backdrop-blur-xl
+        shadow-sm shadow-black/40
+      "
             >
-              {/* ✅ LABEL */}
-              <span
-                className="
-      text-[10px] sm:text-xs
-      text-slate-300/80
-      whitespace-nowrap
-    "
-              >
+              <span className="text-[10px] sm:text-xs text-slate-300/80 whitespace-nowrap">
                 Financial Year
               </span>
 
-              {/* ✅ SELECT */}
               <select
                 value={selectedFY}
                 onChange={(e) => setSelectedFY(Number(e.target.value))}
                 className="
-      bg-transparent
-      text-[11px] sm:text-sm
-      px-1.5 sm:px-2
-      text-slate-50
-      border-none
-      focus:outline-none
-      focus:ring-0
-      cursor-pointer
-      min-w-[90px] sm:min-w-[130px]
-    "
+          bg-transparent
+          text-[11px] sm:text-sm
+          px-1.5
+          text-slate-50
+          border-none
+          focus:outline-none
+          cursor-pointer
+          min-w-[100px] sm:min-w-[130px]
+        "
               >
                 <option value={getCurrentFinancialYear()} className="bg-slate-900">
                   {formatFY(getCurrentFinancialYear())} (Current)
@@ -361,31 +450,32 @@ const Stations = () => {
               </select>
             </div>
 
-
-            {/* CREATE BUTTON */}
+            {/* CREATE */}
             <button
               onClick={() => setOpenModal(true)}
               className="
-    inline-flex items-center justify-center
-    rounded-xl sm:rounded-2xl
-    bg-gradient-to-r from-blue-500 to-sky-400
-    px-4 sm:px-5
-    py-2 sm:py-2.5
-    text-xs sm:text-sm
-    font-semibold text-white
-    shadow-lg shadow-blue-500/40
-    hover:shadow-blue-400/60
-    hover:scale-[1.03]
-    active:scale-[0.98]
-    transition-transform
-    whitespace-nowrap
-  "
+        inline-flex items-center justify-center
+        rounded-xl sm:rounded-2xl
+        bg-gradient-to-r from-blue-500 to-sky-400
+        px-4 sm:px-5
+        py-2 sm:py-2.5
+        text-xs sm:text-sm
+        font-semibold
+        text-white
+        shadow-lg shadow-blue-500/40
+        hover:shadow-blue-400/60
+        hover:scale-[1.03]
+        active:scale-[0.98]
+        transition
+        whitespace-nowrap
+      "
             >
-              <span className="mr-1 sm:mr-1.5 text-base leading-none">＋</span>
+              <span className="mr-1.5 text-base leading-none">＋</span>
               New Station
             </button>
-
           </div>
+
+
         </div>
 
 
@@ -399,7 +489,64 @@ const Stations = () => {
 
 
         {/* ===================== VIEW MODE TOGGLE ===================== */}
-        <div className="flex justify-end mb-5">
+        <div className="flex justify-end mb-5 gap-x-3">
+
+          <button
+            onClick={() => setOpenDeleteModal(true)}
+            className="
+    group relative inline-flex items-center justify-center
+    gap-1.5
+
+    /* SIZE MATCH */
+    px-3 sm:px-4
+   h-[3rem]
+    text-[10px] sm:text-xs
+    font-semibold
+
+    /* COLOR */
+    text-slate-300
+
+    /* GLASS BASE (MATCH TOGGLE) */
+    bg-white/10
+    backdrop-blur-xl
+    border border-white/20
+    rounded-2xl
+
+    /* SHADOW (MATCH TOGGLE) */
+    shadow-lg shadow-black/20
+
+    /* INTERACTION */
+    hover:bg-white/20
+    hover:text-slate-100
+    transition-all duration-300
+    active:scale-[0.97]
+  "
+          >
+            {/* ICON */}
+            <svg
+              className="sm:w-4 sm:h-4 text-slate-300 group-hover:text-slate-100 transition"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2 0H7m2-3h6a1 1 0 011 1v2H8V5a1 1 0 011-1z"
+              />
+            </svg>
+
+            <span className="tracking-wide">
+              Delete
+            </span>
+          </button>
+
+
+
+
+
+
           {/* VIEW MODE TOGGLE */}
           <div className="flex justify-end mb-6 max-[1100px]:hidden">
             <div
@@ -469,6 +616,10 @@ const Stations = () => {
               </button>
             </div>
           </div>
+
+
+
+
 
         </div>
 
@@ -646,10 +797,7 @@ const Stations = () => {
     "
           >
 
-            {/* MOBILE-ONLY HEADER BADGE */}
-            <div className="sm:hidden px-4 py-2 text-[11px] text-slate-300 bg-white/5 border-b border-white/10">
-              Swipe → to view full table
-            </div>
+
 
             <table
               className="
@@ -945,6 +1093,7 @@ const Stations = () => {
             </div>
           </div>
         )}
+
 
         {/* ✅ EDIT MODAL */}
         {openEditModal && (
@@ -1326,6 +1475,17 @@ const Stations = () => {
             </div>
           )
         }
+
+
+        <DeleteStationModal
+          open={openDeleteModal}
+          onClose={() => setOpenDeleteModal(false)}
+          stations={stations}
+          selectedFY={selectedFY}
+          onDeleteStation={handleDeleteStation}
+          onDeleteYear={handleDeleteYear}
+        />
+
 
 
 
