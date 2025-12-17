@@ -325,7 +325,7 @@ const Stations = () => {
     payload.append("totalEstimated", editForm.totalEstimated);
     payload.append("description", editForm.description);
     payload.append("allocationType", editForm.allocationType);
-
+    payload.append("remark", editForm.remark);
 
 
     if (editForm.receipt instanceof File) {
@@ -1284,16 +1284,34 @@ const Stations = () => {
                   </div>
 
                   {/* REMARK */}
-                  <div>
-                    <label className="mb-1 block text-xs text-slate-300">
-                      Remark (read only)
-                    </label>
-                    <input
-                      value={editForm.remark}
-                      readOnly
-                      className="w-full px-4 py-3 rounded-2xl bg-slate-900/80 border border-white/10 text-sm text-slate-200 cursor-not-allowed"
-                    />
-                  </div>
+                  {/* REMARK */}
+<div>
+  <label className="mb-1 block text-xs text-slate-300">
+    Remark
+  </label>
+
+  <input
+    value={editForm.remark}
+    onChange={(e) =>
+      setEditForm({
+        ...editForm,
+        remark: e.target.value,
+      })
+    }
+    className="
+      w-full px-4 py-3
+      rounded-2xl
+      bg-slate-900/80
+      border border-white/20
+      text-sm text-slate-200
+      focus:border-sky-400/60
+      focus:ring-2 focus:ring-sky-400/30
+      transition
+    "
+    placeholder="Add remark..."
+  />
+</div>
+
 
                   {/*  ALLOCATION TYPE */}
                   <div className="relative">
