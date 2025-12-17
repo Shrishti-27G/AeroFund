@@ -13,7 +13,7 @@ import autoTable from "jspdf-autotable";
 import BudgetSummary from "./BudgetSummary.jsx";
 import DeleteStationModal from "./DeleteStationModal.jsx";
 import { deleteStation, deleteFinancialYear } from "../../services/operations/stationsOperations.js";
-
+import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 
 
 
@@ -51,7 +51,7 @@ const Stations = () => {
   const [viewMode, setViewMode] = useState("table");
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [expandedDesc, setExpandedDesc] = useState(null);
-
+  const [showPassword, setShowPassword] = useState(false);
 
 
 
@@ -281,19 +281,53 @@ const Stations = () => {
     e.preventDefault();
     setLoading(true);
 
-    if (formData.password.length < 8) {
-      toast.error("Password must be at least 8 characters long");
+    if (!formData.stationName.trim()) {
+      toast.error("Station name is required");
+      setLoading(false);
       return;
     }
-    
+
+    if (!formData.stationCode.trim()) {
+      toast.error("Station code is required");
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.email.trim()) {
+      toast.error("Email is required");
+      setLoading(false);
+      return;
+    }
+
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error("Please enter a valid email address");
+      setLoading(false);
+      return;
+    }
+
+
+    if (formData.password.length < 8) {
+      toast.error("Password must be at least 8 characters long");
+      setLoading(false);
+      return;
+    }
+
+
+    if (!formData.financialYear) {
+      toast.error("Please select a financial year");
+      setLoading(false);
+      return;
+    }
 
 
     const result = await dispatch(
       createStation(
-        formData.stationName,
-        formData.stationCode,
+        formData.stationName.trim(),
+        formData.stationCode.trim(),
         formData.password,
-        formData.email,
+        formData.email.trim(),
         Number(formData.financialYear)
       )
     );
@@ -306,14 +340,13 @@ const Stations = () => {
         email: "",
         password: "",
         financialYear: getCurrentFinancialYear(),
-      })
+      });
       fetchStations();
     }
 
     setLoading(false);
-
-
   };
+
 
 
 
@@ -1116,12 +1149,13 @@ const Stations = () => {
                   />
                 </div>
 
-                <div>
+                <div className="relative">
                   <label className="mb-1 block text-xs text-slate-300">
                     Password
                   </label>
+
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}   // ✅ toggle type
                     value={formData.password}
                     onChange={(e) =>
                       setFormData({
@@ -1129,10 +1163,29 @@ const Stations = () => {
                         password: e.target.value,
                       })
                     }
-                    className={baseInputClass}
+                    className={`${baseInputClass} pr-10`}        // ✅ space for icon
                     placeholder="Minimum 8 characters"
+                    autoComplete="new-password"
                   />
+
+                  {/* 👁️ Eye Icon */}
+                  <span
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="
+      absolute
+      right-4
+      top-8      
+      cursor-pointer
+      text-slate-400
+      hover:text-slate-200
+      text-xl
+      transition
+    "
+                  >
+                    {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
+                  </span>
                 </div>
+
 
                 <div>
                   <label className="mb-1 block text-xs text-slate-300">
@@ -1292,20 +1345,20 @@ const Stations = () => {
 
                   {/* REMARK */}
                   {/* REMARK */}
-<div>
-  <label className="mb-1 block text-xs text-slate-300">
-    Remark
-  </label>
+                  <div>
+                    <label className="mb-1 block text-xs text-slate-300">
+                      Remark
+                    </label>
 
-  <input
-    value={editForm.remark}
-    onChange={(e) =>
-      setEditForm({
-        ...editForm,
-        remark: e.target.value,
-      })
-    }
-    className="
+                    <input
+                      value={editForm.remark}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          remark: e.target.value,
+                        })
+                      }
+                      className="
       w-full px-4 py-3
       rounded-2xl
       bg-slate-900/80
@@ -1315,9 +1368,9 @@ const Stations = () => {
       focus:ring-2 focus:ring-sky-400/30
       transition
     "
-    placeholder="Add remark..."
-  />
-</div>
+                      placeholder="Add remark..."
+                    />
+                  </div>
 
 
                   {/*  ALLOCATION TYPE */}

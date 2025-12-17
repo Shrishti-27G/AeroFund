@@ -3,6 +3,7 @@ import { loginAdmin } from "../../services/operations/adminAuthOperations";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
+import { toast } from "sonner";
 
 const LoginForm = ({ switchToRegister, closeModal }) => {
     const [email, setEmail] = useState("");
@@ -15,11 +16,41 @@ const LoginForm = ({ switchToRegister, closeModal }) => {
     const submitHandler = async (e) => {
         e.preventDefault();
 
-        const user = await dispatch(loginAdmin(email, password, navigate));
 
-        if (user) {
-           
+        if (!email.trim()) {
+            toast.error("Email is required");
+            return;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            toast.error("Please enter a valid email address");
+            return;
+        }
+
+        if (!password) {
+            toast.error("Password is required");
+            return;
+        }
+
+        if (password.length < 8) {
+            toast.error("Password must be at least 8 characters long");
+            return;
+        }
+
+        try {
+            const user = await dispatch(loginAdmin(email, password, navigate));
+
+            if (!user) {
+                toast.error("Login failed");
+                return;
+            }
+
             closeModal();
+        } catch (error) {
+            toast.error(
+                error?.response?.data?.message || "Invalid login credentials"
+            );
         }
     };
 

@@ -17,12 +17,31 @@ const SignupForm = ({ switchToLogin, closeModal }) => {
     const submitHandler = async (e) => {
         e.preventDefault();
 
+       
+        if (!name || name.trim().length < 3) {
+            toast.error("Name must be at least 3 characters long");
+            return;
+        }
 
-        if (formData.password.length < 8) {
+        
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            toast.error("Please enter a valid email address");
+            return;
+        }
+
+        
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phoneRegex.test(phone)) {
+            toast.error("Phone number must be 10 digits");
+            return;
+        }
+
+    
+        if (password.length < 8) {
             toast.error("Password must be at least 8 characters long");
             return;
-          }
-          
+        }
 
         try {
             const result = await signupAdmin(
@@ -38,13 +57,13 @@ const SignupForm = ({ switchToLogin, closeModal }) => {
             }
 
             toast.success("Account created! Please login.");
-            switchToLogin();
+            switchToLogin(); 
 
         } catch (err) {
-
             toast.error("Something went wrong");
         }
     };
+
 
 
     return (
