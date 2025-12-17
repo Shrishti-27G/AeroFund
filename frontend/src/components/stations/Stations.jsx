@@ -5,6 +5,7 @@ import {
   getAllStations,
   updateYearlyBudget,
 } from "../../services/operations/stationsOperations.js";
+import { toast } from "sonner";
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -279,6 +280,12 @@ const Stations = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+
+    if (formData.password.length < 8) {
+      toast.error("Password must be at least 8 characters long");
+      return;
+    }
+    
 
 
     const result = await dispatch(
@@ -1123,7 +1130,7 @@ const Stations = () => {
                       })
                     }
                     className={baseInputClass}
-                    placeholder="Minimum 6 characters"
+                    placeholder="Minimum 8 characters"
                   />
                 </div>
 

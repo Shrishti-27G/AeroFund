@@ -3,6 +3,7 @@ import { signupAdmin } from "../../services/operations/adminAuthOperations";
 import { toast } from "sonner";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 
+
 const SignupForm = ({ switchToLogin, closeModal }) => {
     const role = "admin"; // fixed role
 
@@ -15,6 +16,13 @@ const SignupForm = ({ switchToLogin, closeModal }) => {
 
     const submitHandler = async (e) => {
         e.preventDefault();
+
+
+        if (formData.password.length < 8) {
+            toast.error("Password must be at least 8 characters long");
+            return;
+          }
+          
 
         try {
             const result = await signupAdmin(
@@ -30,10 +38,10 @@ const SignupForm = ({ switchToLogin, closeModal }) => {
             }
 
             toast.success("Account created! Please login.");
-            switchToLogin(); 
+            switchToLogin();
 
         } catch (err) {
-            
+
             toast.error("Something went wrong");
         }
     };
@@ -73,7 +81,7 @@ const SignupForm = ({ switchToLogin, closeModal }) => {
                 <div className="relative">
                     <input
                         type={showPassword ? "text" : "password"}
-                        placeholder="Password"
+                        placeholder="Minimum 8 characters"
                         className="w-full p-2 mb-4 rounded bg-white text-black pr-10"
                         onChange={(e) => setPassword(e.target.value)}
                         autoComplete="new-password"
