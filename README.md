@@ -91,7 +91,7 @@ http://localhost:5173
 
 ## 🔐 Authentication
 - Admin: Email + Password
-- Station: Station Code / Email + Password
+- Station: Station Code + Email + Password
 - JWT-based authentication
 
 ---
